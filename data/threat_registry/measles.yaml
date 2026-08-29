@@ -1,0 +1,10 @@
+id: measles
+name: Measles
+aliases: [rubeola]
+pathogen: measles virus
+transmission_mode: airborne
+trusted_sources: [{source_id: cdc_measles_cases}, {source_id: cdc_nwss_measles}]
+indicators: [confirmed_cases, outbreaks, affected_jurisdictions, wastewater_detections]
+severity_indicators: [hospitalizations, deaths]
+extraction_schema: measles_v1
+alert_rules: []

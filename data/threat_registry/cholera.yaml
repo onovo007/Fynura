@@ -1,0 +1,10 @@
+id: cholera
+name: Cholera
+aliases: []
+pathogen: Vibrio cholerae
+transmission_mode: fecal_oral
+trusted_sources: [{source_id: who_cholera}]
+indicators: [suspected_cases, confirmed_cases, affected_geographies]
+severity_indicators: [deaths, crude_case_fatality_ratio]
+extraction_schema: cholera_v1
+alert_rules: []

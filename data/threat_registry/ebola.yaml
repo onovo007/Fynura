@@ -1,0 +1,10 @@
+id: ebola
+name: Ebola virus disease
+aliases: [EVD]
+pathogen: orthoebolavirus
+transmission_mode: direct_contact
+trusted_sources: [{source_id: who_don}, {source_id: africa_cdc}]
+indicators: [confirmed_cases, probable_cases, affected_geographies]
+severity_indicators: [deaths, crude_case_fatality_ratio]
+extraction_schema: ebola_v1
+alert_rules: []
