@@ -1,2 +1,1 @@
 """Fynura backend."""
-

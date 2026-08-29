@@ -112,4 +112,36 @@ class AskResponse(BaseModel):
     answer: str
     evidence_ids: list[str]
     declined: bool = False
+    visualization_available: bool = False
 
+
+class VisualizationPoint(BaseModel):
+    label: str
+    value: float
+    unit: str
+    evidence_ids: list[str]
+    geography: str
+    reporting_cutoff: date | None = None
+    publication_date: date | None = None
+    source_id: str
+    source_url: HttpUrl
+    verification_status: str = "verified"
+
+
+class VisualizationSpec(BaseModel):
+    visualization_id: str = Field(default_factory=lambda: str(uuid4()))
+    chart_type: Literal["horizontal_bar", "reporting_timeline"]
+    title: str
+    subtitle: str
+    threat_id: str
+    geography: str
+    points: list[VisualizationPoint]
+    supporting_evidence_ids: list[str]
+    source_label: str
+    source_url: HttpUrl
+    reporting_cutoff: date | None = None
+    retrieved_at: datetime
+    what_this_shows: str
+    what_changed: str | None = None
+    limitation: str
+    downloadable: bool = True
