@@ -1,11 +1,17 @@
 import asyncio
 import logging
+import re
+from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, field_validator
 
+from backend.config import get_settings
 from backend.models.domain import AskRequest, AskResponse, Watch
 from backend.repositories import MemoryRepository
 from backend.services.pipeline import Pipeline
@@ -20,9 +26,12 @@ app = FastAPI(
     title="Fynura",
     version="0.1.0",
     description="Near-real-time, traceable public-health intelligence",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 repo = MemoryRepository()
 pipeline = Pipeline(repo)
+settings = get_settings()
 ROOT = Path(__file__).resolve().parents[1]
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")
 
@@ -30,6 +39,101 @@ app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")
 @app.get("/", include_in_schema=False)
 def home():
     return FileResponse(ROOT / "frontend" / "index.html")
+
+
+@app.get("/docs", include_in_schema=False)
+def docs_home():
+    return FileResponse(ROOT / "frontend" / "docs.html")
+
+
+@app.get("/welcome", include_in_schema=False)
+def welcome():
+    return FileResponse(ROOT / "frontend" / "welcome.html")
+
+
+@app.get("/privacy", include_in_schema=False)
+def privacy():
+    return FileResponse(ROOT / "frontend" / "privacy.html")
+
+
+class OnboardingRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+    country: str = Field(min_length=2, max_length=80)
+    privacy_acknowledged: bool
+    stakeholder_role: str | None = None
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
+            raise ValueError("Enter a valid email address")
+        return value
+
+    @field_validator("country")
+    @classmethod
+    def valid_country(cls, value: str) -> str:
+        value = value.strip()
+        if not re.fullmatch(r"[A-Za-z][A-Za-z .,'()-]{1,79}", value):
+            raise ValueError("Select a valid country")
+        return value
+
+
+class AnalyticsEvent(BaseModel):
+    anonymous_or_user_id: str = Field(min_length=8, max_length=80)
+    event_type: str
+    country: str | None = Field(default=None, max_length=80)
+    stakeholder_role: str | None = Field(default=None, max_length=40)
+    threat_id: str | None = Field(default=None, pattern="^(measles|ebola|cholera)$")
+    feature: str | None = Field(default=None, max_length=40)
+    session_id: str = Field(min_length=8, max_length=80)
+
+    @field_validator("event_type")
+    @classmethod
+    def allowed_event(cls, value: str) -> str:
+        allowed = {"user_registered", "session_started", "threat_viewed", "ask_fynura_submitted", "evidence_opened", "chart_viewed", "map_viewed", "visual_downloaded", "citation_copied", "watch_created", "brief_generated", "docs_viewed"}
+        if value not in allowed:
+            raise ValueError("Unsupported analytics event")
+        return value
+
+
+@app.get("/api/product/config")
+def product_config():
+    return {"onboarding_required": settings.fynura_onboarding_required, "privacy_notice_version": settings.fynura_privacy_notice_version, "authentication": "lightweight_onboarding"}
+
+
+@app.post("/api/onboarding", status_code=201)
+def onboard(request: OnboardingRequest):
+    if not request.privacy_acknowledged:
+        raise HTTPException(422, "Privacy Notice and Responsible Use acknowledgement is required")
+    now = datetime.now(UTC).isoformat()
+    existing = next((u for u in repo.users.values() if u["email"] == request.email), None)
+    user = existing or {"user_id": f"usr_{uuid4().hex}", "email": request.email, "created_at": now, "account_status": "active"}
+    user.update({"country": request.country, "last_active_at": now, "stakeholder_role": request.stakeholder_role, "privacy_notice_version": settings.fynura_privacy_notice_version, "privacy_acknowledged_at": now})
+    repo.users[user["user_id"]] = user
+    return {"user_id": user["user_id"], "country": user["country"], "stakeholder_role": user["stakeholder_role"], "privacy_notice_version": user["privacy_notice_version"]}
+
+
+@app.post("/api/events", status_code=202)
+def record_event(event: AnalyticsEvent):
+    payload = event.model_dump()
+    payload.update({"event_id": f"evt_{uuid4().hex}", "timestamp": datetime.now(UTC).isoformat()})
+    repo.events.append(payload)
+    return {"accepted": True}
+
+
+def require_owner(x_fynura_owner: str | None) -> None:
+    if not settings.fynura_owner_email or x_fynura_owner != settings.fynura_owner_email:
+        raise HTTPException(403, "Owner authorization required")
+
+
+@app.get("/api/admin/overview")
+def admin_overview(x_fynura_owner: str | None = Header(default=None)):
+    require_owner(x_fynura_owner)
+    countries = Counter(u["country"] for u in repo.users.values())
+    features = Counter(e.get("feature") for e in repo.events if e.get("feature"))
+    threats = Counter(e.get("threat_id") for e in repo.events if e.get("threat_id"))
+    return {"total_users": len(repo.users), "countries": dict(countries), "features": dict(features), "threats": dict(threats), "event_count": len(repo.events)}
 
 
 @app.get("/health")

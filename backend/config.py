@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     fynura_model: str = "gemini-2.5-flash"
     fynura_use_firestore: bool = False
     fynura_live_fetch: bool = True
+    fynura_onboarding_required: bool = False
+    fynura_privacy_notice_version: str = "2026-08-29"
+    fynura_owner_email: str | None = None
     request_timeout_seconds: float = 20.0
 
 

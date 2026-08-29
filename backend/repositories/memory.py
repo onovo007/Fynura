@@ -5,6 +5,8 @@ class MemoryRepository:
     def __init__(self):
         self.assessments: dict[str, Assessment] = {}
         self.watches: dict[str, Watch] = {}
+        self.users: dict[str, dict] = {}
+        self.events: list[dict] = []
 
     def save_assessment(self, item: Assessment) -> Assessment:
         self.assessments[item.assessment_id] = item
