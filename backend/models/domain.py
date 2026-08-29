@@ -95,6 +95,7 @@ class Assessment(BaseModel):
     evidence_groups: list[EvidenceGroup]
     derived_metrics: list[DerivedMetric] = []
     evidence_confidence: float
+    confidence_details: dict[str, Any] = {}
     limitations: list[str]
     freshness: Literal["fresh", "cached"]
     previous_assessment_id: str | None = None
@@ -111,10 +112,22 @@ class Watch(BaseModel):
     last_assessment_id: str | None = None
 
 
+class ContextEnvelope(BaseModel):
+    threat_id: str | None = None
+    disease: str | None = None
+    outbreak_or_dataset: str | None = None
+    geography: str = "Global"
+    visual_id: str | None = None
+    visual_title: str | None = None
+    reporting_cutoff: date | None = None
+    supporting_evidence_ids: list[str] = []
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=1000)
     threat_id: str | None = None
     stakeholder_mode: str = "general_public"
+    context: ContextEnvelope | None = None
 
 
 class AskResponse(BaseModel):
@@ -122,6 +135,12 @@ class AskResponse(BaseModel):
     evidence_ids: list[str]
     declined: bool = False
     visualization_available: bool = False
+    subject: dict[str, Any] = {}
+    metrics: list[dict[str, Any]] = []
+    what_changed: str | None = None
+    limitations: list[str] = []
+    sources: list[dict[str, Any]] = []
+    confidence: dict[str, Any] | None = None
 
 
 class VisualizationPoint(BaseModel):

@@ -15,7 +15,7 @@ build/
 *.egg-info/
 .coverage
 htmlcov/
+tmp/
 .firestore/
 service-account*.json
 credentials*.json
-

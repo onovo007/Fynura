@@ -220,75 +220,97 @@ def visualizations(assessment_id: str):
 
 @app.post("/api/ask", response_model=AskResponse)
 def ask(request: AskRequest):
-    if not request.threat_id:
+    threat_id = request.context.threat_id if request.context else request.threat_id
+    if not threat_id:
+        available = [repo.latest_assessment(x) for x in ("ebola", "measles", "cholera")]
+        available = [item for item in available if item]
+        if not available:
+            return AskResponse(
+                answer="Fynura is monitoring Ebola, Measles and Cholera, but no verified assessments are loaded in this process yet.",
+                evidence_ids=[],
+                declined=True,
+                subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
+            )
+        answer = "Fynura is currently monitoring three demonstration threats: Ebola, Measles and Cholera. " + " ".join(item.summary for item in available)
         return AskResponse(
-            answer="Choose a threat so I can retrieve its structured evidence.",
-            evidence_ids=[],
-            declined=True,
+            answer=answer,
+            evidence_ids=sorted({eid for item in available for claim in item.claims for eid in claim.evidence_ids}),
+            subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
+            limitations=["Coverage is demonstrative and source reporting periods differ across threats."],
         )
-    item = repo.latest_assessment(request.threat_id)
+    item = repo.latest_assessment(threat_id)
     if not item:
         return AskResponse(
-            answer="Fynura has no stored assessment for that threat yet. Refresh its evidence first.",
+            answer=f"Fynura has no stored assessment for {threat_id} yet. Refresh that threat's evidence first.",
             evidence_ids=[],
             declined=True,
+            subject={"label": threat_id.upper(), "geography": request.context.geography if request.context else "Configured scope"},
         )
     q = request.question.lower()
+    latest = max(item.observations, key=lambda o: o.reporting_period_end or o.event_date or o.retrieved_at.date())
+    cutoff = request.context.reporting_cutoff if request.context and request.context.reporting_cutoff else latest.reporting_period_end or latest.event_date
+    names = {
+        "ebola": ("Bundibugyo virus disease outbreak", "Democratic Republic of the Congo", "WHO Disease Outbreak News"),
+        "measles": ("WHO provisional monthly measles surveillance", "Global", "WHO provisional measles and rubella data"),
+        "cholera": ("global cholera and acute watery diarrhoea surveillance", "Global", "WHO Weekly Epidemiological Record"),
+    }
+    label, geography, dataset = names[threat_id]
+    subject = {"label": label, "disease": threat_id, "geography": geography, "dataset": dataset, "reporting_cutoff": str(cutoff) if cutoff else None}
+    latest_rows = [o for o in item.observations if (o.reporting_period_end or o.event_date) == cutoff]
+    if threat_id == "measles":
+        latest_rows = [o for o in item.observations if o.indicator in {"reported_measles_cases_global", "countries_reporting"}]
+    metric_labels = {"confirmed_cases": "Confirmed cases", "reported_measles_cases_global": "Provisional cases", "reported_cholera_awd_cases": "Reported cases", "reported_deaths": "Deaths", "crude_cfr": "Crude reported CFR", "affected_health_zones": "Affected health zones", "affected_provinces": "Affected provinces", "countries_reporting": "Reporting countries", "affected_countries": "Affected countries"}
+    metrics = [{"label": metric_labels[o.indicator], "value": o.value, "unit": o.unit, "evidence_id": o.observation_id} for o in latest_rows if o.indicator in metric_labels]
+    if threat_id == "cholera":
+        metrics += [{"label": "Crude reported CFR", "value": m.value, "unit": m.unit, "evidence_id": m.input_observation_ids[0]} for m in item.derived_metrics if m.value is not None]
+    if threat_id == "ebola":
+        values = {metric["label"]: metric for metric in metrics}
+        cases = int(values.get("Confirmed cases", {}).get("value", 0))
+        deaths = int(values.get("Deaths", {}).get("value", 0))
+        cfr = values.get("Crude reported CFR", {}).get("value")
+        zones = values.get("Affected health zones", {}).get("value")
+        opening = (
+            f"The current {label} in the {geography} remains a major public-health event. "
+            f"WHO reports {cases:,} confirmed cases and {deaths:,} deaths through {cutoff}"
+            f"{f', corresponding to a crude reported CFR of {cfr:.1f}%' if cfr is not None else ''}."
+            f"{f' Transmission has been reported across {int(zones)} health zones.' if zones is not None else ''}"
+        )
+    elif threat_id == "measles":
+        opening = f"The selected view summarizes {label} for the latest sufficiently complete period ending {cutoff}. {item.summary}"
+    else:
+        opening = f"The selected view summarizes {label} through {cutoff}. {item.summary}"
+    changed = None
+    if "changed" in q:
+        if item.delta and threat_id == "ebola":
+            changed = f"Compared with the preceding compatible WHO report, confirmed cases increased by {int(item.delta['confirmed_cases']):,}, from {int(item.delta['previous_cases']):,} to {int(item.delta['current_cases']):,}."
+        else:
+            changed = "Fynura has the current verified observation but does not yet have a compatible preceding observation for a reliable change calculation."
+        opening = f"{opening} {changed}"
+    unique_sources = {}
+    for observation in latest_rows or [latest]:
+        unique_sources[str(observation.source_url)] = {
+            "organization": "World Health Organization",
+            "title": dataset,
+            "published": str(observation.publication_date) if observation.publication_date else None,
+            "reporting_cutoff": str(observation.reporting_period_end or observation.event_date) if observation.reporting_period_end or observation.event_date else None,
+            "url": str(observation.source_url),
+            "source_id": observation.source_id,
+        }
     if "cite" in q or "which source" in q:
-        observations = sorted(
-            item.observations,
-            key=lambda o: (
-                o.reporting_period_end or o.event_date or o.retrieved_at.date(),
-                o.publication_date or o.retrieved_at.date(),
-            ),
-        )
-        selected = observations[-1]
-        return AskResponse(
-            answer=f"For this {item.threat_id} claim, cite the World Health Organization source supporting the selected observation. Reporting cutoff: {selected.reporting_period_end or selected.event_date}. Published: {selected.publication_date or 'not stated in the source metadata'}. Source: {selected.source_url}",
-            evidence_ids=[selected.observation_id],
-            visualization_available=bool(select_visualizations(item)),
-        )
+        opening = f"For the selected {label}, the recommended primary citation is the {dataset} published by the World Health Organization."
     if any(name in q for name in ("africa cdc", "ecdc", "paho", "compare who", "sources agree")):
-        named = [s for s in sources() if s["display_name"].lower() in q]
-        status = (
-            "; ".join(f"{s['display_name']}: {s['integration_status']}" for s in named)
-            or "Only WHO currently contributes verified observations for this view"
-        )
-        return AskResponse(
-            answer=f"{status}. Fynura does not count configured or candidate authorities as corroborating evidence, and it never sums overlapping reports. The current canonical {item.threat_id} view is supported by WHO; no independent multi-source consensus is claimed.",
-            evidence_ids=sorted({eid for c in item.claims for eid in c.evidence_ids}),
-        )
-    if any(
-        word in q
-        for word in (
-            "case",
-            "death",
-            "changed",
-            "latest",
-            "source",
-            "confidence",
-            "happening",
-            "situation",
-            "known",
-            "uncertain",
-            "limitation",
-            "report",
-            "outbreak",
-        )
-    ):
-        refs = sorted({eid for claim in item.claims for eid in claim.evidence_ids})
-        return AskResponse(
-            answer=(
-                f"{item.summary} Evidence confidence is {item.evidence_confidence:.0%}. "
-                f"{item.claims[0].text}"
-            ),
-            evidence_ids=refs,
-            visualization_available=bool(select_visualizations(item)),
-        )
+        opening = f"Only WHO currently contributes verified observations to this {label} view. Configured or candidate authorities are not counted as corroboration, and overlapping reports are never summed."
+    refs = sorted({eid for claim in item.claims for eid in claim.evidence_ids})
     return AskResponse(
-        answer="The structured evidence currently stored does not support a reliable answer to that question.",
-        evidence_ids=[],
-        declined=True,
+        answer=opening,
+        evidence_ids=refs,
+        visualization_available=bool(select_visualizations(item)),
+        subject=subject,
+        metrics=metrics,
+        what_changed=changed,
+        limitations=item.limitations,
+        sources=list(unique_sources.values()),
+        confidence=item.confidence_details or {"score": item.evidence_confidence, "level": "UNSPECIFIED", "model": "legacy"},
     )
 
 

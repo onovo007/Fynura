@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from backend.config import get_settings
 from backend.epidemiology.metrics import crude_cfr
-from backend.evidence import fuse_observations
+from backend.evidence import calculate_confidence, fuse_observations
 from backend.models.domain import Assessment, Claim
 from backend.sources import WHOCholeraAdapter, WHOEbolaAdapter, WHOMeaslesAdapter
 
@@ -22,6 +22,7 @@ class Pipeline:
         candidate, content = await adapter.retrieve(settings.request_timeout_seconds)
         observations = adapter.extract(candidate, content, run_id)
         groups = fuse_observations(observations)
+        confidence = calculate_confidence(observations, groups)
         selected = next(o for o in observations if o.indicator == "reported_measles_cases_global")
         previous = self.repository.latest_assessment("measles")
         delta = {}
@@ -48,7 +49,8 @@ class Pipeline:
             ],
             observations=observations,
             evidence_groups=groups,
-            evidence_confidence=groups[0].confidence,
+            evidence_confidence=confidence["score"],
+            confidence_details=confidence,
             limitations=[
                 "Authoritative surveillance is provisional and may be revised.",
                 "WHO states that reported cases represent only a proportion of true community occurrence.",
@@ -76,6 +78,7 @@ class Pipeline:
         documents = await adapter.retrieve(get_settings().request_timeout_seconds)
         observations = adapter.extract(documents, run_id)
         groups = fuse_observations(observations)
+        confidence = calculate_confidence(observations, groups)
         cases = sorted(
             (o for o in observations if o.indicator == "confirmed_cases"),
             key=lambda o: o.reporting_period_end,
@@ -116,7 +119,8 @@ class Pipeline:
             ],
             observations=observations,
             evidence_groups=groups,
-            evidence_confidence=min(g.confidence for g in groups),
+            evidence_confidence=confidence["score"],
+            confidence_details=confidence,
             limitations=[
                 "Cumulative observations may include retrospective reconciliation.",
                 "Changes between reports do not necessarily represent incident cases during the interval.",
@@ -141,6 +145,7 @@ class Pipeline:
         candidate, content = await adapter.retrieve(get_settings().request_timeout_seconds)
         observations = adapter.extract(candidate, content, run_id)
         groups = fuse_observations(observations)
+        confidence = calculate_confidence(observations, groups)
         cases, deaths, countries = observations
         cfr = crude_cfr(deaths, cases)
         previous = self.repository.latest_assessment("cholera")
@@ -164,7 +169,8 @@ class Pipeline:
             observations=observations,
             evidence_groups=groups,
             derived_metrics=[cfr],
-            evidence_confidence=min(g.confidence for g in groups),
+            evidence_confidence=confidence["score"],
+            confidence_details=confidence,
             limitations=[
                 "Case definitions and reporting systems differ across countries.",
                 "Missing reports do not imply zero cases.",
