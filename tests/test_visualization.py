@@ -56,9 +56,10 @@ def assessment(observations):
 def test_selects_supported_comparison_with_lineage():
     cases, deaths = make("reported_cholera_awd_cases", 100), make("reported_deaths", 4)
     result = select_visualizations(assessment([cases, deaths]))
-    assert result[0].chart_type == "horizontal_bar"
+    assert result[0].chart_type == "metric_cards"
     assert result[0].supporting_evidence_ids == [cases.observation_id, deaths.observation_id]
 
 
-def test_refuses_insufficient_evidence():
-    assert select_visualizations(assessment([make("reported_cholera_awd_cases", 100)])) == []
+def test_uses_metric_card_for_single_supported_cholera_metric():
+    result = select_visualizations(assessment([make("reported_cholera_awd_cases", 100)]))
+    assert result[0].chart_type == "metric_cards"

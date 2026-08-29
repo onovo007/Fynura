@@ -5,7 +5,7 @@ from backend.config import get_settings
 from backend.epidemiology.metrics import crude_cfr
 from backend.evidence import fuse_observations
 from backend.models.domain import Assessment, Claim
-from backend.sources import CDCMeaslesAdapter, WHOCholeraAdapter
+from backend.sources import WHOCholeraAdapter, WHOEbolaAdapter, WHOMeaslesAdapter
 
 log = logging.getLogger("fynura.pipeline")
 
@@ -17,12 +17,12 @@ class Pipeline:
     async def assess_measles(self) -> Assessment:
         run_id = str(uuid4())
         settings = get_settings()
-        adapter = CDCMeaslesAdapter()
+        adapter = WHOMeaslesAdapter()
         log.info("pipeline_start", extra={"run_id": run_id, "agent": "discovery"})
         candidate, content = await adapter.retrieve(settings.request_timeout_seconds)
         observations = adapter.extract(candidate, content, run_id)
         groups = fuse_observations(observations)
-        selected = observations[0]
+        selected = next(o for o in observations if o.indicator == "reported_measles_cases_global")
         previous = self.repository.latest_assessment("measles")
         delta = {}
         if previous and previous.observations:
@@ -38,11 +38,11 @@ class Pipeline:
             threat_id="measles",
             geography=selected.geography,
             evidence_cutoff=selected.retrieved_at,
-            headline=f"CDC reports {int(selected.value):,} measles cases in the United States",
-            summary="This is near-real-time public-health intelligence based on the latest value Fynura could retrieve from the official CDC measles surveillance page. Reporting delays and later revisions are possible.",
+            headline=f"WHO provisional surveillance reports {int(selected.value):,} measles cases globally",
+            summary=f"WHO Member States reported {int(selected.value):,} provisional measles cases for the latest sufficiently complete month. These data under-represent occurrence and have a one-to-two-month reporting lag.",
             claims=[
                 Claim(
-                    text=f"CDC reports {int(selected.value):,} measles cases through {selected.reporting_period_end.isoformat()}.",
+                    text=f"WHO provisional monthly surveillance reports {int(selected.value):,} measles cases for the period ending {selected.reporting_period_end.isoformat()}.",
                     evidence_ids=[selected.observation_id],
                 )
             ],
@@ -51,7 +51,8 @@ class Pipeline:
             evidence_confidence=groups[0].confidence,
             limitations=[
                 "Authoritative surveillance is provisional and may be revised.",
-                "A single-source observation is not independent corroboration.",
+                "WHO states that reported cases represent only a proportion of true community occurrence.",
+                "Recent monthly data are incomplete; Fynura selects the latest month with at least 120 reporting countries.",
                 "This assessment is not medical advice or an estimate of individual risk.",
             ],
             freshness="fresh",
@@ -67,6 +68,71 @@ class Pipeline:
                 "model": settings.fynura_model,
             },
         )
+        return assessment
+
+    async def assess_ebola(self) -> Assessment:
+        run_id = str(uuid4())
+        adapter = WHOEbolaAdapter()
+        documents = await adapter.retrieve(get_settings().request_timeout_seconds)
+        observations = adapter.extract(documents, run_id)
+        groups = fuse_observations(observations)
+        cases = sorted(
+            (o for o in observations if o.indicator == "confirmed_cases"),
+            key=lambda o: o.reporting_period_end,
+        )
+        latest, prior = cases[-1], cases[-2]
+        latest_at = lambda indicator: next(
+            (
+                o
+                for o in observations
+                if o.indicator == indicator
+                and o.reporting_period_end == latest.reporting_period_end
+            ),
+            None,
+        )
+        deaths, cfr, zones, provinces = map(
+            latest_at,
+            ("reported_deaths", "crude_cfr", "affected_health_zones", "affected_provinces"),
+        )
+        delta = {
+            "confirmed_cases": latest.value - prior.value,
+            "previous_cases": prior.value,
+            "current_cases": latest.value,
+            "previous_cutoff": prior.reporting_period_end.isoformat(),
+            "current_cutoff": latest.reporting_period_end.isoformat(),
+        }
+        assessment = Assessment(
+            run_id=run_id,
+            threat_id="ebola",
+            geography=latest.geography,
+            evidence_cutoff=latest.retrieved_at,
+            headline=f"WHO reports {int(latest.value):,} confirmed Ebola cases in the Democratic Republic of the Congo",
+            summary=f"The latest WHO Disease Outbreak News reports {int(latest.value):,} confirmed cases and {int(deaths.value):,} deaths through {latest.reporting_period_end:%d %B %Y}. This is an increase of {int(delta['confirmed_cases']):,} reported cases from the preceding compatible WHO report.",
+            claims=[
+                Claim(
+                    text=f"WHO reports {int(latest.value):,} confirmed cases and {int(deaths.value):,} deaths.",
+                    evidence_ids=[latest.observation_id, deaths.observation_id],
+                )
+            ],
+            observations=observations,
+            evidence_groups=groups,
+            evidence_confidence=min(g.confidence for g in groups),
+            limitations=[
+                "Cumulative observations may include retrospective reconciliation.",
+                "Changes between reports do not necessarily represent incident cases during the interval.",
+                "This is not medical advice.",
+            ],
+            freshness="fresh",
+            delta=delta,
+        )
+        assessment.delta.update(
+            {
+                k: v.value
+                for k, v in {"cfr": cfr, "health_zones": zones, "provinces": provinces}.items()
+                if v
+            }
+        )
+        self.repository.save_assessment(assessment)
         return assessment
 
     async def assess_cholera(self) -> Assessment:

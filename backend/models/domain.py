@@ -130,7 +130,7 @@ class VisualizationPoint(BaseModel):
 
 class VisualizationSpec(BaseModel):
     visualization_id: str = Field(default_factory=lambda: str(uuid4()))
-    chart_type: Literal["horizontal_bar", "reporting_timeline"]
+    chart_type: Literal["ranked_bar", "trajectory", "metric_cards"]
     title: str
     subtitle: str
     threat_id: str

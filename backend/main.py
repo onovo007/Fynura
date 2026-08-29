@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 
@@ -43,14 +44,38 @@ def threats():
     ]
 
 
+@app.get("/api/intelligence")
+async def intelligence():
+    async def ensure(threat_id):
+        existing = repo.latest_assessment(threat_id)
+        if existing:
+            return existing
+        try:
+            if threat_id == "measles":
+                return await pipeline.assess_measles()
+            if threat_id == "ebola":
+                return await pipeline.assess_ebola()
+            return await pipeline.assess_cholera()
+        except Exception:
+            logging.getLogger("fynura.bootstrap").exception(
+                "initial intelligence refresh failed", extra={"threat_id": threat_id}
+            )
+            return repo.latest_assessment(threat_id)
+
+    values = await asyncio.gather(*(ensure(x) for x in ("measles", "ebola", "cholera")))
+    return {item.threat_id: item for item in values if item}
+
+
 @app.post("/api/threats/{threat_id}/assess")
 async def assess(threat_id: str):
-    if threat_id not in {"measles", "cholera"}:
-        raise HTTPException(501, "Ebola is registered for the next live-source expansion phase.")
+    if threat_id not in {"measles", "ebola", "cholera"}:
+        raise HTTPException(404, "Unknown threat")
     try:
-        return await (
-            pipeline.assess_measles() if threat_id == "measles" else pipeline.assess_cholera()
-        )
+        if threat_id == "measles":
+            return await pipeline.assess_measles()
+        if threat_id == "ebola":
+            return await pipeline.assess_ebola()
+        return await pipeline.assess_cholera()
     except Exception as exc:
         raise HTTPException(502, str(exc)) from exc
 
