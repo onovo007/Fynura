@@ -46,6 +46,10 @@ class Observation(BaseModel):
     extraction_confidence: float = Field(ge=0, le=1)
     supporting_excerpt: str = Field(max_length=500)
     run_id: str
+    raw_value: float | None = None
+    raw_indicator: str | None = None
+    raw_geography: str | None = None
+    raw_case_definition: str | None = None
 
 
 class DerivedMetric(BaseModel):
@@ -65,6 +69,11 @@ class EvidenceGroup(BaseModel):
     reason_codes: list[str]
     conflicts: list[str]
     candidate_observation_ids: list[str]
+    relationship: Literal[
+        "same_observation_family", "compatible", "complementary", "conflicting", "non_comparable"
+    ] = "same_observation_family"
+    source_count: int = 1
+    quality_signals: dict[str, float | bool | str] = {}
 
 
 class Claim(BaseModel):

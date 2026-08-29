@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.models.domain import AskRequest, AskResponse, Watch
 from backend.repositories import MemoryRepository
 from backend.services.pipeline import Pipeline
+from backend.services.source_registry import network_summary, sources
 from backend.services.visualization import select_visualizations
 
 logging.basicConfig(
@@ -42,6 +43,11 @@ def threats():
         {"id": x, "name": x.title(), "supported": True, "assessment": repo.latest_assessment(x)}
         for x in ("measles", "ebola", "cholera")
     ]
+
+
+@app.get("/api/sources")
+def source_registry():
+    return {"sources": sources(), "summary": network_summary()}
 
 
 @app.get("/api/intelligence")
@@ -124,6 +130,30 @@ def ask(request: AskRequest):
             declined=True,
         )
     q = request.question.lower()
+    if "cite" in q or "which source" in q:
+        observations = sorted(
+            item.observations,
+            key=lambda o: (
+                o.reporting_period_end or o.event_date or o.retrieved_at.date(),
+                o.publication_date or o.retrieved_at.date(),
+            ),
+        )
+        selected = observations[-1]
+        return AskResponse(
+            answer=f"For this {item.threat_id} claim, cite the World Health Organization source supporting the selected observation. Reporting cutoff: {selected.reporting_period_end or selected.event_date}. Published: {selected.publication_date or 'not stated in the source metadata'}. Source: {selected.source_url}",
+            evidence_ids=[selected.observation_id],
+            visualization_available=bool(select_visualizations(item)),
+        )
+    if any(name in q for name in ("africa cdc", "ecdc", "paho", "compare who", "sources agree")):
+        named = [s for s in sources() if s["display_name"].lower() in q]
+        status = (
+            "; ".join(f"{s['display_name']}: {s['integration_status']}" for s in named)
+            or "Only WHO currently contributes verified observations for this view"
+        )
+        return AskResponse(
+            answer=f"{status}. Fynura does not count configured or candidate authorities as corroborating evidence, and it never sums overlapping reports. The current canonical {item.threat_id} view is supported by WHO; no independent multi-source consensus is claimed.",
+            evidence_ids=sorted({eid for c in item.claims for eid in c.evidence_ids}),
+        )
     if any(word in q for word in ("case", "changed", "latest", "source", "confidence")):
         refs = sorted({eid for claim in item.claims for eid in claim.evidence_ids})
         return AskResponse(

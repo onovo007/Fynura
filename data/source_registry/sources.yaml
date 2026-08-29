@@ -1,37 +1,8 @@
 sources:
-  - source_id: cdc_measles_cases
-    organization: U.S. Centers for Disease Control and Prevention
-    base_domain: cdc.gov
-    source_type: national_health_authority
-    authority_tier: 1
-    supported_threats: [measles]
-    supported_geographies: [US]
-    retrieval_method: html
-    update_cadence: weekly when active
-    notes: Provisional national reported-case summary; wording may change.
-  - source_id: cdc_nwss_measles
-    organization: U.S. Centers for Disease Control and Prevention
-    base_domain: cdc.gov
-    source_type: official_surveillance_platform
-    authority_tier: 3
-    supported_threats: [measles]
-    supported_geographies: [US]
-    retrieval_method: html
-    notes: Wastewater detections are an auxiliary signal, not case counts.
-  - source_id: who_don
-    organization: World Health Organization
-    base_domain: who.int
-    source_type: international_health_authority
-    authority_tier: 1
-    supported_threats: [ebola]
-    supported_geographies: [global]
-    retrieval_method: html
-  - source_id: who_cholera
-    organization: World Health Organization
-    base_domain: who.int
-    source_type: international_health_authority
-    authority_tier: 1
-    supported_threats: [cholera]
-    supported_geographies: [global]
-    retrieval_method: html
-
+  - {source_id: who_global_surveillance, organization: World Health Organization, display_name: WHO, scope: global, region: Global, authority_type: international_health_authority, base_domain: who.int, integration_status: operational, operational: true, role: "Global surveillance, outbreak intelligence and standardized health data", diseases_supported: [measles, ebola, cholera], geographic_resolution: [global, region, country], temporal_resolution: [monthly, report], indicators_supported: [cases, deaths, affected_geographies, case_fatality_ratio], case_classifications: [suspected, clinical, epidemiologically_linked, laboratory_confirmed], historical_depth: "2012-present and event-specific DON", structured_data_available: true, api_available: false, download_available: true, update_frequency: "monthly and event-driven", retrieval_method: xlsx_and_html}
+  - {source_id: africa_cdc, organization: Africa Centres for Disease Control and Prevention, display_name: Africa CDC, scope: regional, region: Africa, authority_type: regional_public_health_authority, base_domain: africacdc.org, integration_status: candidate, operational: false, role: "Regional African public-health intelligence", diseases_supported: [ebola, cholera, measles], geographic_resolution: [region, country], temporal_resolution: [report], indicators_supported: [cases, deaths, affected_geographies], structured_data_available: false, api_available: false, download_available: false, retrieval_method: discovery_required}
+  - {source_id: ecdc, organization: European Centre for Disease Prevention and Control, display_name: ECDC, scope: regional, region: Europe, authority_type: regional_public_health_authority, base_domain: ecdc.europa.eu, integration_status: configured, operational: false, role: "European disease surveillance and threat intelligence", diseases_supported: [measles], geographic_resolution: [region, country], temporal_resolution: [monthly], indicators_supported: [cases, notification_rate], structured_data_available: true, api_available: true, download_available: true, retrieval_method: public_surveillance_atlas_rest_pending_adapter}
+  - {source_id: paho, organization: Pan American Health Organization, display_name: PAHO, scope: regional, region: Americas, authority_type: regional_public_health_authority, base_domain: paho.org, integration_status: configured, operational: false, role: "Regional surveillance and epidemiological intelligence for the Americas", diseases_supported: [measles, cholera], geographic_resolution: [region, country], temporal_resolution: [biweekly, alert, report], indicators_supported: [cases, deaths, affected_geographies], structured_data_available: false, api_available: false, download_available: true, retrieval_method: official_document_feed_pending_adapter}
+  - {source_id: cdc, organization: U.S. Centers for Disease Control and Prevention, display_name: CDC, scope: national, region: Americas, authority_type: national_health_authority, base_domain: cdc.gov, integration_status: access_limited, operational: false, role: "United States national surveillance", diseases_supported: [measles, ebola], geographic_resolution: [country, state], temporal_resolution: [weekly], indicators_supported: [cases, outbreaks, wastewater_detections], structured_data_available: false, api_available: false, download_available: false, retrieval_method: html}
+  - {source_id: who_regions, organization: WHO Regional Offices, display_name: WHO Regional Offices, scope: regional, region: Global, authority_type: regional_public_health_authority, base_domain: who.int, integration_status: configured, operational: false, role: "WHO AFRO, EURO, EMRO, SEARO and WPRO regional surveillance", diseases_supported: [measles, ebola, cholera], geographic_resolution: [region, country], temporal_resolution: [report], indicators_supported: [cases, deaths, affected_geographies], structured_data_available: false, api_available: false, download_available: true, retrieval_method: source_specific}
+  - {source_id: national_authorities, organization: National Health Authorities, display_name: National Health Authorities, scope: national, region: Global, authority_type: national_health_authority, base_domain: varies, integration_status: configured, operational: false, role: "Country and subnational authoritative surveillance", diseases_supported: [measles, ebola, cholera], geographic_resolution: [country, subnational], temporal_resolution: [varies], indicators_supported: [cases, deaths, affected_geographies], structured_data_available: false, api_available: false, download_available: false, retrieval_method: allowlisted_per_authority}

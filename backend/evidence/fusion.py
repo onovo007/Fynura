@@ -10,6 +10,15 @@ AUTHORITY = {
 }
 
 
+def contextual_authority(o: Observation) -> float:
+    score = AUTHORITY.get(o.source_type, 0.5)
+    if o.geography.level == "country" and o.source_type == "national_health_authority":
+        return score + 0.1
+    if o.geography.level == "region" and o.source_type == "regional_public_health_authority":
+        return score + 0.1
+    return score
+
+
 def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
     buckets = defaultdict(list)
     for o in observations:
@@ -31,8 +40,7 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
                 items[0],
                 "resolved",
                 round(
-                    0.75 * items[0].extraction_confidence
-                    + 0.2 * AUTHORITY.get(items[0].source_type, 0.5),
+                    0.75 * items[0].extraction_confidence + 0.2 * contextual_authority(items[0]),
                     2,
                 ),
                 ["single_authoritative_observation"],
@@ -40,7 +48,7 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
             )
         elif len(values) == 1:
             selected, status, confidence, reasons, conflicts = (
-                max(items, key=lambda o: (AUTHORITY.get(o.source_type, 0.5), o.retrieved_at)),
+                max(items, key=lambda o: (contextual_authority(o), o.retrieved_at)),
                 "resolved",
                 0.95,
                 ["independent_source_agreement", "authority_supported"],
@@ -50,14 +58,13 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
             ranked = sorted(
                 items,
                 key=lambda o: (
-                    AUTHORITY.get(o.source_type, 0.5),
+                    contextual_authority(o),
                     o.publication_date or o.retrieved_at.date(),
                 ),
                 reverse=True,
             )
             if (
-                AUTHORITY.get(ranked[0].source_type, 0.5)
-                > AUTHORITY.get(ranked[1].source_type, 0.5)
+                contextual_authority(ranked[0]) > contextual_authority(ranked[1])
                 and ranked[0].publication_date
                 and (
                     not ranked[1].publication_date
@@ -87,6 +94,17 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
                 reason_codes=reasons,
                 conflicts=conflicts,
                 candidate_observation_ids=[o.observation_id for o in items],
+                relationship="conflicting" if status == "conflicted" else "same_observation_family",
+                source_count=len({o.source_id for o in items}),
+                quality_signals={
+                    "definition_consistency": len({o.case_definition for o in items}) == 1,
+                    "geographic_consistency": len(
+                        {(o.geography.level, o.geography.code or o.geography.name) for o in items}
+                    )
+                    == 1,
+                    "source_agreement": len(values) == 1,
+                    "reporting_cutoff": str(items[0].reporting_period_end or items[0].event_date),
+                },
             )
         )
     return result
