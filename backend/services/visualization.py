@@ -68,7 +68,10 @@ def select_visualizations(a: Assessment) -> list[VisualizationSpec]:
                 limitation="WHO states these provisional reports under-represent true occurrence and have an approximately one-to-two-month lag.",
             )
         ]
-    cases = next((o for o in a.observations if o.indicator == "reported_cholera_awd_cases"), None)
+    global_rows = [o for o in a.observations if o.geography.level == "global"]
+    cases = next(
+        (o for o in global_rows if o.indicator == "reported_cholera_awd_cases"), None
+    )
     if not cases:
         return []
     return [
@@ -80,9 +83,9 @@ def select_visualizations(a: Assessment) -> list[VisualizationSpec]:
             geography="Global",
             points=[
                 point(o, o.indicator.replace("reported_", "").replace("_", " ").title())
-                for o in a.observations
+                for o in global_rows
             ],
-            supporting_evidence_ids=[o.observation_id for o in a.observations],
+            supporting_evidence_ids=[o.observation_id for o in global_rows],
             source_label="World Health Organization, Weekly Epidemiological Record",
             source_url=cases.source_url,
             reporting_cutoff=cases.reporting_period_end,

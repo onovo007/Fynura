@@ -11,33 +11,53 @@ client = TestClient(app)
 
 def seed(threat_id, indicator, value, geography):
     item = Observation(
-        threat_id=threat_id, indicator=indicator, value=value, unit="persons",
+        threat_id=threat_id,
+        indicator=indicator,
+        value=value,
+        unit="persons",
         geography=Geography(name=geography, level="global" if geography == "Global" else "country"),
-        reporting_period_end=date(2026, 8, 20), retrieved_at=datetime(2026, 8, 29, tzinfo=UTC),
-        source_id=f"who_{threat_id}", source_url=f"https://who.int/{threat_id}",
-        source_type="international_health_authority", case_definition="fixture",
-        extraction_method="fixture", extraction_confidence=.99, supporting_excerpt="fixture",
+        reporting_period_end=date(2026, 8, 20),
+        retrieved_at=datetime(2026, 8, 29, tzinfo=UTC),
+        source_id=f"who_{threat_id}",
+        source_url=f"https://who.int/{threat_id}",
+        source_type="international_health_authority",
+        case_definition="fixture",
+        extraction_method="fixture",
+        extraction_confidence=0.99,
+        supporting_excerpt="fixture",
         run_id=f"run-{threat_id}",
     )
     groups = fuse_observations([item])
     confidence = calculate_confidence([item], groups)
-    repo.save_assessment(Assessment(
-        run_id=f"run-{threat_id}", threat_id=threat_id, geography=item.geography,
-        evidence_cutoff=item.retrieved_at, headline=f"{threat_id} fixture",
-        summary=f"Current verified {threat_id} evidence reports {int(value):,} persons.",
-        claims=[Claim(text="fixture", evidence_ids=[item.observation_id])], observations=[item],
-        evidence_groups=groups, evidence_confidence=confidence["score"],
-        confidence_details=confidence, limitations=["Fixture limitation."], freshness="fresh",
-    ))
+    repo.save_assessment(
+        Assessment(
+            run_id=f"run-{threat_id}",
+            threat_id=threat_id,
+            geography=item.geography,
+            evidence_cutoff=item.retrieved_at,
+            headline=f"{threat_id} fixture",
+            summary=f"Current verified {threat_id} evidence reports {int(value):,} persons.",
+            claims=[Claim(text="fixture", evidence_ids=[item.observation_id])],
+            observations=[item],
+            evidence_groups=groups,
+            evidence_confidence=confidence["score"],
+            confidence_details=confidence,
+            limitations=["Fixture limitation."],
+            freshness="fresh",
+        )
+    )
 
 
 def ask(question, threat_id):
-    return client.post("/api/ask", json={
-        "question": question,
-        "threat_id": "ebola" if threat_id != "ebola" else "measles",
-        "context": {"threat_id": threat_id, "disease": threat_id, "geography": "Global"},
-        "stakeholder_mode": "public_health_professional",
-    }).json()
+    return client.post(
+        "/api/ask",
+        json={
+            "question": question,
+            "threat_id": "ebola" if threat_id != "ebola" else "measles",
+            "context": {"threat_id": threat_id, "disease": threat_id, "geography": "Global"},
+            "stakeholder_mode": "public_health_professional",
+        },
+    ).json()
 
 
 def test_context_envelope_isolates_sequential_threats():
@@ -53,3 +73,27 @@ def test_what_changed_does_not_invent_comparison():
     seed("measles", "reported_measles_cases_global", 200, "Global")
     result = ask("What changed?", "measles")
     assert "does not yet have a compatible preceding observation" in result["what_changed"]
+
+
+def test_country_context_scopes_the_answer_subject():
+    seed("cholera", "reported_cholera_awd_cases", 642, "Haiti")
+    response = client.post(
+        "/api/ask",
+        json={
+            "question": "What does the latest evidence show here?",
+            "threat_id": "cholera",
+            "context": {
+                "threat_id": "cholera",
+                "disease": "cholera",
+                "geography": "Haiti",
+                "indicator": "reported_cholera_awd_cases",
+                "visual": "global_map",
+            },
+            "stakeholder_mode": "public_health_professional",
+        },
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["subject"]["label"] == "Cholera surveillance in Haiti"
+    assert result["subject"]["geography"] == "Haiti"
+    assert result["metrics"][0]["value"] == 642

@@ -6,6 +6,7 @@ import httpx
 import openpyxl
 
 from backend.models.domain import Geography, Observation, SourceCandidate
+from backend.services.geography import normalize_country
 
 URL = "https://immunizationdata.who.int/docs/librariesprovider21/measles-and-rubella/404-table-web-epi-curve-data.xlsx?sfvrsn=5922ebf7_19"
 PORTAL = "https://immunizationdata.who.int/global?topic=Provisional-measles-and-rubella-data"
@@ -55,7 +56,7 @@ class WHOMeaslesAdapter:
             Observation(
                 indicator="reported_measles_cases",
                 value=float(r[9] or 0),
-                geography=Geography(name=str(r[1]), level="country", code=str(r[2])),
+                geography=normalize_country(str(r[1]), str(r[2]), str(r[0])),
                 supporting_excerpt=f"WHO workbook row: {r[1]}, {year}-{month:02d}, measles total {r[9] or 0}",
                 **common,
             )

@@ -4,7 +4,8 @@ from datetime import UTC, datetime
 import httpx
 from bs4 import BeautifulSoup
 
-from backend.models.domain import Geography, Observation
+from backend.models.domain import Observation
+from backend.services.geography import normalize_country
 
 REPORTS = ["2026-DON608", "2026-DON613", "2026-DON614", "2026-DON615", "2026-DON616"]
 BASE = "https://www.who.int/emergencies/disease-outbreak-news/item/"
@@ -35,7 +36,9 @@ class WHOEbolaAdapter:
             r"As of (\d{1,2} \w+ 2026).*?total of\s+([\d ]+) confirmed cases, including\s+([\d ]+) deaths.*?CFR\) of\s+([\d.]+)%",
             re.IGNORECASE | re.DOTALL,
         )
-        geo = Geography(name="Democratic Republic of the Congo", level="country", code="COD")
+        geo = normalize_country(
+            "Democratic Republic of the Congo", "COD", "African Region"
+        )
         for url, text in documents:
             match = pattern.search(text[:15000])
             pub = re.search(r"(\d{1,2} (?:May|June|July|August) 2026)", text)

@@ -13,6 +13,12 @@ class Geography(BaseModel):
     name: str
     level: str
     code: str | None = None
+    source_name: str | None = None
+    iso2: str | None = None
+    iso3: str | None = None
+    who_region: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class SourceCandidate(BaseModel):
@@ -121,6 +127,8 @@ class ContextEnvelope(BaseModel):
     visual_title: str | None = None
     reporting_cutoff: date | None = None
     supporting_evidence_ids: list[str] = []
+    indicator: str | None = None
+    visual: str | None = None
 
 
 class AskRequest(BaseModel):

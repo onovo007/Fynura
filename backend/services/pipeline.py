@@ -146,7 +146,17 @@ class Pipeline:
         observations = adapter.extract(candidate, content, run_id)
         groups = fuse_observations(observations)
         confidence = calculate_confidence(observations, groups)
-        cases, deaths, countries = observations
+        cases = next(
+            o
+            for o in observations
+            if o.indicator == "reported_cholera_awd_cases" and o.geography.level == "global"
+        )
+        deaths = next(
+            o
+            for o in observations
+            if o.indicator == "reported_deaths" and o.geography.level == "global"
+        )
+        countries = next(o for o in observations if o.indicator == "affected_countries")
         cfr = crude_cfr(deaths, cases)
         previous = self.repository.latest_assessment("cholera")
         assessment = Assessment(

@@ -2,18 +2,27 @@ import asyncio
 import logging
 import re
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Annotated
 from uuid import uuid4
 
-from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, Field, field_validator
 
 from backend.config import get_settings
 from backend.models.domain import AskRequest, AskResponse, Watch
-from backend.repositories import MemoryRepository
+from backend.repositories import MemoryRepository, ProductRepository
+from backend.services.identity import (
+    create_session_cookie,
+    optional_identity,
+    require_identity,
+    require_owner,
+)
+from backend.services.map_data import build_map_data
 from backend.services.pipeline import Pipeline
 from backend.services.source_registry import network_summary, sources
 from backend.services.visualization import select_visualizations
@@ -30,14 +39,19 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 repo = MemoryRepository()
+product_repo = ProductRepository(repo)
 pipeline = Pipeline(repo)
 settings = get_settings()
+OwnerIdentity = Annotated[dict, Depends(require_owner)]
+SignedInIdentity = Annotated[dict, Depends(require_identity)]
 ROOT = Path(__file__).resolve().parents[1]
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")
 
 
 @app.get("/", include_in_schema=False)
-def home():
+def home(request: Request):
+    if settings.fynura_onboarding_required and not optional_identity(request):
+        return RedirectResponse("/welcome", status_code=307)
     return FileResponse(ROOT / "frontend" / "index.html")
 
 
@@ -49,6 +63,11 @@ def docs_home():
 @app.get("/welcome", include_in_schema=False)
 def welcome():
     return FileResponse(ROOT / "frontend" / "welcome.html")
+
+
+@app.get("/admin", include_in_schema=False)
+def admin(_: OwnerIdentity):
+    return FileResponse(ROOT / "frontend" / "admin.html")
 
 
 @app.get("/privacy", include_in_schema=False)
@@ -91,49 +110,188 @@ class AnalyticsEvent(BaseModel):
     @field_validator("event_type")
     @classmethod
     def allowed_event(cls, value: str) -> str:
-        allowed = {"user_registered", "session_started", "threat_viewed", "ask_fynura_submitted", "evidence_opened", "chart_viewed", "map_viewed", "visual_downloaded", "citation_copied", "watch_created", "brief_generated", "docs_viewed"}
+        allowed = {
+            "user_registered",
+            "session_started",
+            "threat_viewed",
+            "ask_fynura_submitted",
+            "evidence_opened",
+            "chart_viewed",
+            "map_viewed",
+            "visual_downloaded",
+            "citation_copied",
+            "watch_created",
+            "brief_generated",
+            "docs_viewed",
+        }
         if value not in allowed:
             raise ValueError("Unsupported analytics event")
         return value
 
 
+class SessionRequest(BaseModel):
+    id_token: str = Field(min_length=100, max_length=10000)
+
+
 @app.get("/api/product/config")
 def product_config():
-    return {"onboarding_required": settings.fynura_onboarding_required, "privacy_notice_version": settings.fynura_privacy_notice_version, "authentication": "lightweight_onboarding"}
+    return {
+        "onboarding_required": settings.fynura_onboarding_required,
+        "privacy_notice_version": settings.fynura_privacy_notice_version,
+        "authentication": "google_identity_platform",
+    }
+
+
+@app.get("/api/auth/config")
+def auth_config():
+    return {
+        "enabled": bool(settings.fynura_firebase_api_key),
+        "apiKey": settings.fynura_firebase_api_key,
+        "authDomain": settings.fynura_auth_domain,
+        "projectId": settings.google_cloud_project,
+    }
+
+
+@app.post("/api/auth/session")
+def auth_session(payload: SessionRequest, response: Response):
+    cookie = create_session_cookie(payload.id_token)
+    identity = firebase_auth.verify_id_token(payload.id_token, check_revoked=True)
+    response.set_cookie(
+        "fynura_session",
+        cookie,
+        max_age=settings.fynura_session_days * 86400,
+        httponly=True,
+        secure=settings.fynura_env != "development",
+        samesite="lax",
+        path="/",
+    )
+    email = identity.get("email", "").lower()
+    return {"email": email, "owner": email == (settings.fynura_owner_email or "").lower()}
+
+
+@app.post("/api/auth/logout", status_code=204)
+def auth_logout(response: Response):
+    response.delete_cookie("fynura_session", path="/")
+
+
+@app.get("/api/auth/me")
+def auth_me(identity: SignedInIdentity):
+    email = identity.get("email", "").lower()
+    return {
+        "uid": identity["uid"],
+        "email": email,
+        "owner": email == (settings.fynura_owner_email or "").lower(),
+    }
 
 
 @app.post("/api/onboarding", status_code=201)
-def onboard(request: OnboardingRequest):
+def onboard(request: OnboardingRequest, http_request: Request):
     if not request.privacy_acknowledged:
         raise HTTPException(422, "Privacy Notice and Responsible Use acknowledgement is required")
     now = datetime.now(UTC).isoformat()
-    existing = next((u for u in repo.users.values() if u["email"] == request.email), None)
-    user = existing or {"user_id": f"usr_{uuid4().hex}", "email": request.email, "created_at": now, "account_status": "active"}
-    user.update({"country": request.country, "last_active_at": now, "stakeholder_role": request.stakeholder_role, "privacy_notice_version": settings.fynura_privacy_notice_version, "privacy_acknowledged_at": now})
-    repo.users[user["user_id"]] = user
-    return {"user_id": user["user_id"], "country": user["country"], "stakeholder_role": user["stakeholder_role"], "privacy_notice_version": user["privacy_notice_version"]}
+    identity = optional_identity(http_request)
+    if settings.fynura_onboarding_required and not identity:
+        raise HTTPException(401, "Google sign-in is required")
+    email = identity.get("email", "").lower() if identity else request.email
+    user_id = identity["uid"] if identity else f"usr_{uuid4().hex}"
+    existing = product_repo.get_user(user_id)
+    user = existing or {
+        "user_id": user_id,
+        "email": email,
+        "created_at": now,
+        "account_status": "active",
+    }
+    user.update(
+        {
+            "country": request.country,
+            "last_active_at": now,
+            "stakeholder_role": request.stakeholder_role,
+            "privacy_notice_version": settings.fynura_privacy_notice_version,
+            "privacy_acknowledged_at": now,
+        }
+    )
+    product_repo.save_user(user)
+    return {
+        "user_id": user["user_id"],
+        "country": user["country"],
+        "stakeholder_role": user["stakeholder_role"],
+        "privacy_notice_version": user["privacy_notice_version"],
+    }
 
 
 @app.post("/api/events", status_code=202)
 def record_event(event: AnalyticsEvent):
     payload = event.model_dump()
     payload.update({"event_id": f"evt_{uuid4().hex}", "timestamp": datetime.now(UTC).isoformat()})
-    repo.events.append(payload)
+    product_repo.save_event(payload)
     return {"accepted": True}
 
 
-def require_owner(x_fynura_owner: str | None) -> None:
-    if not settings.fynura_owner_email or x_fynura_owner != settings.fynura_owner_email:
-        raise HTTPException(403, "Owner authorization required")
-
-
 @app.get("/api/admin/overview")
-def admin_overview(x_fynura_owner: str | None = Header(default=None)):
-    require_owner(x_fynura_owner)
-    countries = Counter(u["country"] for u in repo.users.values())
-    features = Counter(e.get("feature") for e in repo.events if e.get("feature"))
-    threats = Counter(e.get("threat_id") for e in repo.events if e.get("threat_id"))
-    return {"total_users": len(repo.users), "countries": dict(countries), "features": dict(features), "threats": dict(threats), "event_count": len(repo.events)}
+def admin_overview(_: OwnerIdentity):
+    users, events = product_repo.list_users(), product_repo.list_events()
+    countries = Counter(u.get("country", "Unknown") for u in users)
+    features = Counter(e.get("feature") for e in events if e.get("feature"))
+    threats = Counter(e.get("threat_id") for e in events if e.get("threat_id"))
+    event_types = Counter(e.get("event_type") for e in events if e.get("event_type"))
+    now = datetime.now(UTC)
+
+    def active_since(days: int) -> int:
+        cutoff = now - timedelta(days=days)
+        return sum(
+            1
+            for u in users
+            if datetime.fromisoformat(u.get("last_active_at", u["created_at"])) >= cutoff
+        )
+
+    return {
+        "total_users": len(users),
+        "active_today": active_since(1),
+        "active_week": active_since(7),
+        "active_month": active_since(30),
+        "countries": dict(countries),
+        "features": dict(features),
+        "threats": dict(threats),
+        "event_types": dict(event_types),
+        "event_count": len(events),
+    }
+
+
+@app.get("/api/admin/users")
+def admin_users(_: OwnerIdentity, search: str = ""):
+    needle = search.strip().lower()
+    users = product_repo.list_users()
+    if needle:
+        users = [
+            u
+            for u in users
+            if needle in u.get("email", "").lower() or needle in u.get("country", "").lower()
+        ]
+    return {"users": sorted(users, key=lambda u: u.get("created_at", ""), reverse=True)[:200]}
+
+
+@app.post("/api/admin/users/{user_id}/disable")
+def admin_disable_user(user_id: str, owner: OwnerIdentity):
+    if user_id == owner.get("uid"):
+        raise HTTPException(409, "The owner account cannot disable itself")
+    try:
+        firebase_auth.update_user(user_id, disabled=True)
+    except firebase_auth.UserNotFoundError as exc:
+        raise HTTPException(404, "User not found") from exc
+    user = product_repo.set_account_status(user_id, "disabled")
+    return {"user": user, "disabled": True}
+
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: str, owner: OwnerIdentity):
+    if user_id == owner.get("uid"):
+        raise HTTPException(409, "The owner account cannot delete itself")
+    try:
+        firebase_auth.delete_user(user_id)
+    except firebase_auth.UserNotFoundError as exc:
+        raise HTTPException(404, "User not found") from exc
+    product_repo.delete_user(user_id)
+    return {"deleted": True}
 
 
 @app.get("/health")
@@ -174,6 +332,24 @@ async def intelligence():
 
     values = await asyncio.gather(*(ensure(x) for x in ("measles", "ebola", "cholera")))
     return {item.threat_id: item for item in values if item}
+
+
+@app.get("/api/map")
+def map_data(threat: str = "all", region: str = "Global", metric: str = "signal"):
+    if threat not in {"all", "measles", "ebola", "cholera"}:
+        raise HTTPException(422, "Unsupported threat filter")
+    if region not in {
+        "Global",
+        "Africa",
+        "Americas",
+        "Europe",
+        "Eastern Mediterranean",
+        "South-East Asia",
+        "Western Pacific",
+    }:
+        raise HTTPException(422, "Unsupported WHO region filter")
+    assessments = [repo.latest_assessment(item) for item in ("measles", "ebola", "cholera")]
+    return build_map_data([item for item in assessments if item], threat, region, metric)
 
 
 @app.post("/api/threats/{threat_id}/assess")
@@ -231,12 +407,19 @@ def ask(request: AskRequest):
                 declined=True,
                 subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
             )
-        answer = "Fynura is currently monitoring three demonstration threats: Ebola, Measles and Cholera. " + " ".join(item.summary for item in available)
+        answer = (
+            "Fynura is currently monitoring three demonstration threats: Ebola, Measles and Cholera. "
+            + " ".join(item.summary for item in available)
+        )
         return AskResponse(
             answer=answer,
-            evidence_ids=sorted({eid for item in available for claim in item.claims for eid in claim.evidence_ids}),
+            evidence_ids=sorted(
+                {eid for item in available for claim in item.claims for eid in claim.evidence_ids}
+            ),
             subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
-            limitations=["Coverage is demonstrative and source reporting periods differ across threats."],
+            limitations=[
+                "Coverage is demonstrative and source reporting periods differ across threats."
+            ],
         )
     item = repo.latest_assessment(threat_id)
     if not item:
@@ -244,25 +427,109 @@ def ask(request: AskRequest):
             answer=f"Fynura has no stored assessment for {threat_id} yet. Refresh that threat's evidence first.",
             evidence_ids=[],
             declined=True,
-            subject={"label": threat_id.upper(), "geography": request.context.geography if request.context else "Configured scope"},
+            subject={
+                "label": threat_id.upper(),
+                "geography": request.context.geography if request.context else "Configured scope",
+            },
         )
     q = request.question.lower()
-    latest = max(item.observations, key=lambda o: o.reporting_period_end or o.event_date or o.retrieved_at.date())
-    cutoff = request.context.reporting_cutoff if request.context and request.context.reporting_cutoff else latest.reporting_period_end or latest.event_date
+    requested_geography = request.context.geography if request.context else "Global"
+    geographic_rows = [
+        observation
+        for observation in item.observations
+        if requested_geography.lower()
+        in {
+            observation.geography.name.lower(),
+            (observation.geography.source_name or "").lower(),
+            (observation.geography.iso2 or "").lower(),
+            (observation.geography.iso3 or observation.geography.code or "").lower(),
+        }
+    ]
+    scoped_rows = geographic_rows or item.observations
+    latest = max(
+        scoped_rows,
+        key=lambda o: o.reporting_period_end or o.event_date or o.retrieved_at.date(),
+    )
+    cutoff = (
+        request.context.reporting_cutoff
+        if request.context and request.context.reporting_cutoff
+        else latest.reporting_period_end or latest.event_date
+    )
     names = {
-        "ebola": ("Bundibugyo virus disease outbreak", "Democratic Republic of the Congo", "WHO Disease Outbreak News"),
-        "measles": ("WHO provisional monthly measles surveillance", "Global", "WHO provisional measles and rubella data"),
-        "cholera": ("global cholera and acute watery diarrhoea surveillance", "Global", "WHO Weekly Epidemiological Record"),
+        "ebola": (
+            "Bundibugyo virus disease outbreak",
+            "Democratic Republic of the Congo",
+            "WHO Disease Outbreak News",
+        ),
+        "measles": (
+            "WHO provisional monthly measles surveillance",
+            "Global",
+            "WHO provisional measles and rubella data",
+        ),
+        "cholera": (
+            "global cholera and acute watery diarrhoea surveillance",
+            "Global",
+            "WHO Weekly Epidemiological Record",
+        ),
     }
     label, geography, dataset = names[threat_id]
-    subject = {"label": label, "disease": threat_id, "geography": geography, "dataset": dataset, "reporting_cutoff": str(cutoff) if cutoff else None}
-    latest_rows = [o for o in item.observations if (o.reporting_period_end or o.event_date) == cutoff]
-    if threat_id == "measles":
-        latest_rows = [o for o in item.observations if o.indicator in {"reported_measles_cases_global", "countries_reporting"}]
-    metric_labels = {"confirmed_cases": "Confirmed cases", "reported_measles_cases_global": "Provisional cases", "reported_cholera_awd_cases": "Reported cases", "reported_deaths": "Deaths", "crude_cfr": "Crude reported CFR", "affected_health_zones": "Affected health zones", "affected_provinces": "Affected provinces", "countries_reporting": "Reporting countries", "affected_countries": "Affected countries"}
-    metrics = [{"label": metric_labels[o.indicator], "value": o.value, "unit": o.unit, "evidence_id": o.observation_id} for o in latest_rows if o.indicator in metric_labels]
-    if threat_id == "cholera":
-        metrics += [{"label": "Crude reported CFR", "value": m.value, "unit": m.unit, "evidence_id": m.input_observation_ids[0]} for m in item.derived_metrics if m.value is not None]
+    if geographic_rows:
+        geography = geographic_rows[0].geography.name
+        label = f"{threat_id.title()} surveillance in {geography}"
+    subject = {
+        "label": label,
+        "disease": threat_id,
+        "geography": geography,
+        "dataset": dataset,
+        "reporting_cutoff": str(cutoff) if cutoff else None,
+    }
+    latest_rows = [
+        o for o in scoped_rows if (o.reporting_period_end or o.event_date) == cutoff
+    ]
+    if threat_id == "measles" and not geographic_rows:
+        latest_rows = [
+            o
+            for o in item.observations
+            if o.indicator in {"reported_measles_cases_global", "countries_reporting"}
+        ]
+    metric_labels = {
+        "confirmed_cases": "Confirmed cases",
+        "reported_measles_cases_global": "Provisional cases",
+        "reported_cholera_awd_cases": "Reported cases",
+        "reported_deaths": "Deaths",
+        "crude_cfr": "Crude reported CFR",
+        "affected_health_zones": "Affected health zones",
+        "affected_provinces": "Affected provinces",
+        "countries_reporting": "Reporting countries",
+        "affected_countries": "Affected countries",
+        "cases_per_100k": "Cases per 100,000",
+        "recent_reported_cases": "Recent-period cases",
+        "recent_reported_deaths": "Recent-period deaths",
+        "recent_crude_cfr": "Recent-period CFR",
+        "monthly_cases_change": "Monthly cases change",
+        "monthly_deaths_change": "Monthly deaths change",
+    }
+    metrics = [
+        {
+            "label": metric_labels[o.indicator],
+            "value": o.value,
+            "unit": o.unit,
+            "evidence_id": o.observation_id,
+        }
+        for o in latest_rows
+        if o.indicator in metric_labels
+    ]
+    if threat_id == "cholera" and not geographic_rows:
+        metrics += [
+            {
+                "label": "Crude reported CFR",
+                "value": m.value,
+                "unit": m.unit,
+                "evidence_id": m.input_observation_ids[0],
+            }
+            for m in item.derived_metrics
+            if m.value is not None
+        ]
     if threat_id == "ebola":
         values = {metric["label"]: metric for metric in metrics}
         cases = int(values.get("Confirmed cases", {}).get("value", 0))
@@ -275,6 +542,18 @@ def ask(request: AskRequest):
             f"{f', corresponding to a crude reported CFR of {cfr:.1f}%' if cfr is not None else ''}."
             f"{f' Transmission has been reported across {int(zones)} health zones.' if zones is not None else ''}"
         )
+    elif geographic_rows:
+        primary = next(
+            (
+                value
+                for value in metrics
+                if value["label"] in {"Reported cases", "Provisional cases", "Confirmed cases"}
+            ),
+            metrics[0] if metrics else None,
+        )
+        opening = f"{label} is represented by the latest compatible WHO country observation through {cutoff}."
+        if primary:
+            opening += f" The reported {primary['label'].lower()} value is {primary['value']:,.0f} {primary['unit']}."
     elif threat_id == "measles":
         opening = f"The selected view summarizes {label} for the latest sufficiently complete period ending {cutoff}. {item.summary}"
     else:
@@ -291,8 +570,12 @@ def ask(request: AskRequest):
         unique_sources[str(observation.source_url)] = {
             "organization": "World Health Organization",
             "title": dataset,
-            "published": str(observation.publication_date) if observation.publication_date else None,
-            "reporting_cutoff": str(observation.reporting_period_end or observation.event_date) if observation.reporting_period_end or observation.event_date else None,
+            "published": str(observation.publication_date)
+            if observation.publication_date
+            else None,
+            "reporting_cutoff": str(observation.reporting_period_end or observation.event_date)
+            if observation.reporting_period_end or observation.event_date
+            else None,
             "url": str(observation.source_url),
             "source_id": observation.source_id,
         }
@@ -310,7 +593,8 @@ def ask(request: AskRequest):
         what_changed=changed,
         limitations=item.limitations,
         sources=list(unique_sources.values()),
-        confidence=item.confidence_details or {"score": item.evidence_confidence, "level": "UNSPECIFIED", "model": "legacy"},
+        confidence=item.confidence_details
+        or {"score": item.evidence_confidence, "level": "UNSPECIFIED", "model": "legacy"},
     )
 
 

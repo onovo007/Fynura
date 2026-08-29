@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     fynura_onboarding_required: bool = False
     fynura_privacy_notice_version: str = "2026-08-29"
     fynura_owner_email: str | None = None
+    fynura_firebase_api_key: str | None = None
+    fynura_auth_domain: str = "fynura-public-health.firebaseapp.com"
+    fynura_session_days: int = 5
     request_timeout_seconds: float = 20.0
 
 
