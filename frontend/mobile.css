@@ -1,0 +1,9 @@
+@media(max-width:700px){
+  .hero>div{min-width:0}
+  .askbar{grid-template-columns:minmax(0,1fr) auto}
+  .askbar>span{display:none}
+  .askbar input{font-size:12px}
+  .askbar button{padding:10px;font-size:11px}
+  .chips{max-width:100%}
+  .orbit{min-width:0}
+}
