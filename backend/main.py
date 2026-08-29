@@ -154,7 +154,24 @@ def ask(request: AskRequest):
             answer=f"{status}. Fynura does not count configured or candidate authorities as corroborating evidence, and it never sums overlapping reports. The current canonical {item.threat_id} view is supported by WHO; no independent multi-source consensus is claimed.",
             evidence_ids=sorted({eid for c in item.claims for eid in c.evidence_ids}),
         )
-    if any(word in q for word in ("case", "changed", "latest", "source", "confidence")):
+    if any(
+        word in q
+        for word in (
+            "case",
+            "death",
+            "changed",
+            "latest",
+            "source",
+            "confidence",
+            "happening",
+            "situation",
+            "known",
+            "uncertain",
+            "limitation",
+            "report",
+            "outbreak",
+        )
+    ):
         refs = sorted({eid for claim in item.claims for eid in claim.evidence_ids})
         return AskResponse(
             answer=(
