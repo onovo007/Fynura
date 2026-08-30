@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     fynura_use_firestore: bool = False
     fynura_live_fetch: bool = True
     fynura_onboarding_required: bool = False
-    fynura_privacy_notice_version: str = "2026-08-29"
+    fynura_privacy_notice_version: str = "2026-08-30"
     fynura_owner_email: str | None = None
     fynura_firebase_api_key: str | None = None
     fynura_auth_domain: str = "fynura-public-health.firebaseapp.com"

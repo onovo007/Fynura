@@ -12,7 +12,7 @@ def resolve_context(request):
     if len(explicit) == 1:
         threat = explicit[0]
         if selected != threat:
-            context = ContextEnvelope(threat_id=threat, disease=threat)
+            context = context.model_copy(update={"threat_id": threat, "disease": threat}) if context and context.visual == "shared_workspace" else ContextEnvelope(threat_id=threat, disease=threat)
         return threat, context
     if len(explicit) > 1:
         return None, None  # Cross-threat overview; never silently choose one disease.

@@ -25,7 +25,10 @@ def verify_token(token: str, session: bool = False) -> dict:
 def optional_identity(request: Request) -> dict | None:
     session = request.cookies.get("fynura_session")
     if session:
-        return verify_token(session, session=True)
+        try:
+            return verify_token(session, session=True)
+        except HTTPException:
+            return None
     authorization = request.headers.get("authorization")
     if authorization and authorization.lower().startswith("bearer "):
         return verify_token(authorization.split(" ", 1)[1])

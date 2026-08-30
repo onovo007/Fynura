@@ -29,8 +29,16 @@ from backend.services.map_data import build_map_data
 from backend.services.pipeline import Pipeline
 from backend.services.refresh import RefreshService
 from backend.services.science import science_answer
+from backend.services.sessions import (
+    active_session,
+    countries,
+    country_record,
+    end_session,
+    start_session,
+)
 from backend.services.source_registry import network_summary, sources
 from backend.services.visualization import select_visualizations
+from backend.services.workspace import workspace
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,6 +64,16 @@ app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")
 
 @app.middleware("http")
 async def frontend_cache_policy(request: Request, call_next):
+    path = request.url.path
+    if path in {"/static/index.html", "/static/admin.html"}:
+        return RedirectResponse("/" if path.endswith("index.html") else "/admin", status_code=307)
+    public_api = {"/api/auth/config", "/api/auth/session", "/api/auth/logout", "/api/auth/me", "/api/onboarding", "/api/countries", "/api/product/config"}
+    protected = path in {"/", "/admin", "/static/index.html", "/static/admin.html"} or (path.startswith("/api/") and path not in public_api)
+    if settings.fynura_onboarding_required and protected and not active_session(request, product_repo):
+        if path in {"/", "/admin", "/static/index.html", "/static/admin.html"}:
+            return RedirectResponse("/welcome", status_code=307, headers={"Cache-Control": "no-store"})
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "Fynura session expired. Please sign in again."}, status_code=401, headers={"Cache-Control": "no-store"})
     response = await call_next(request)
     if request.url.path in {"/", "/welcome", "/admin"} or request.url.path.startswith("/api/auth/"):
         response.headers["Cache-Control"] = "no-store"
@@ -95,7 +113,7 @@ class OnboardingRequest(BaseModel):
     email: str = Field(min_length=5, max_length=254)
     country: str = Field(min_length=2, max_length=80)
     privacy_acknowledged: bool
-    stakeholder_role: str | None = None
+    stakeholder_role: str | None = Field(default=None, max_length=40)
 
     @field_validator("email")
     @classmethod
@@ -108,10 +126,7 @@ class OnboardingRequest(BaseModel):
     @field_validator("country")
     @classmethod
     def valid_country(cls, value: str) -> str:
-        value = value.strip()
-        if not re.fullmatch(r"[A-Za-z][A-Za-z .,'()-]{1,79}", value):
-            raise ValueError("Select a valid country")
-        return value
+        return country_record(value.strip())["country_name"]
 
 
 class AnalyticsEvent(BaseModel):
@@ -139,6 +154,7 @@ class AnalyticsEvent(BaseModel):
             "watch_created",
             "brief_generated",
             "docs_viewed",
+            "map_filter_used", "source_opened", "voice_used", "early_signal_viewed",
         }
         if value not in allowed:
             raise ValueError("Unsupported analytics event")
@@ -158,6 +174,11 @@ def product_config():
     }
 
 
+@app.get("/api/countries")
+def country_options():
+    return countries()
+
+
 @app.get("/api/auth/config")
 def auth_config():
     return {
@@ -175,7 +196,6 @@ def auth_session(payload: SessionRequest, response: Response):
     response.set_cookie(
         "fynura_session",
         cookie,
-        max_age=settings.fynura_session_days * 86400,
         httponly=True,
         secure=settings.fynura_env != "development",
         samesite="lax",
@@ -186,8 +206,10 @@ def auth_session(payload: SessionRequest, response: Response):
 
 
 @app.post("/api/auth/logout", status_code=204)
-def auth_logout(response: Response):
+def auth_logout(request: Request, response: Response):
+    end_session(request, product_repo)
     response.delete_cookie("fynura_session", path="/")
+    response.delete_cookie("fynura_access", path="/")
 
 
 @app.get("/api/auth/me")
@@ -201,7 +223,7 @@ def auth_me(identity: SignedInIdentity):
 
 
 @app.post("/api/onboarding", status_code=201)
-def onboard(request: OnboardingRequest, http_request: Request):
+def onboard(request: OnboardingRequest, http_request: Request, response: Response):
     if not request.privacy_acknowledged:
         raise HTTPException(422, "Privacy Notice and Responsible Use acknowledgement is required")
     now = datetime.now(UTC).isoformat()
@@ -226,7 +248,12 @@ def onboard(request: OnboardingRequest, http_request: Request):
             "privacy_acknowledged_at": now,
         }
     )
+    user.update(country_record(request.country))
     product_repo.save_user(user)
+    if identity:
+        session = start_session(http_request, product_repo, user)
+        response.set_cookie("fynura_access", session["session_id"], httponly=True,
+                            secure=settings.fynura_env != "development", samesite="lax", path="/")
     return {
         "user_id": user["user_id"],
         "country": user["country"],
@@ -236,8 +263,17 @@ def onboard(request: OnboardingRequest, http_request: Request):
 
 
 @app.post("/api/events", status_code=202)
-def record_event(event: AnalyticsEvent):
+def record_event(event: AnalyticsEvent, request: Request):
     payload = event.model_dump()
+    session = active_session(request, product_repo)
+    if settings.fynura_onboarding_required and not session:
+        raise HTTPException(401, "Active session required")
+    if session:
+        payload["verified_session"] = True
+        payload.update(anonymous_or_user_id=session["user_id"], session_id=session["session_id"],
+                       country=session["country"], stakeholder_role=session.get("stakeholder_role"))
+        session["last_active_at"] = datetime.now(UTC).isoformat()
+        product_repo.save_session(session)
     payload.update({"event_id": f"evt_{uuid4().hex}", "timestamp": datetime.now(UTC).isoformat()})
     product_repo.save_event(payload)
     return {"accepted": True}
@@ -385,8 +421,33 @@ def analytics():
     return [snapshot for item in items if item for snapshot in [intelligence_snapshot(item)] if snapshot]
 
 
+@app.get("/api/workspace")
+def analytical_workspace(threat: str = "all", region: str = "Global", country: str = "", period: str = ""):
+    if threat not in {"all", "measles", "ebola", "cholera"}:
+        raise HTTPException(422, "Unsupported threat")
+    items = [repo.latest_assessment(t) for t in ("measles", "ebola", "cholera")]
+    return workspace([a for a in items if a], threat, region, country, period)
+
+
+@app.get("/api/admin/usage")
+def admin_usage(_: OwnerIdentity):
+    sessions, events = product_repo.list_sessions(), product_repo.list_events()
+    events = [e for e in events if e.get("verified_session")]
+    users = Counter(s["user_id"] for s in sessions)
+    durations = [(datetime.fromisoformat(s.get("ended_at") or s["last_active_at"]) - datetime.fromisoformat(s["started_at"])).total_seconds() for s in sessions]
+    return {"total_sessions": len(sessions), "unique_users": len(users),
+            "returning_users": sum(n > 1 for n in users.values()),
+            "average_active_duration_seconds": round(sum(durations) / len(durations)) if durations else 0,
+            "sessions_by_country": dict(Counter(s["country"] for s in sessions)),
+            "stakeholder_roles": dict(Counter(s.get("stakeholder_role") or "Not supplied" for s in sessions)),
+            "events": dict(Counter(e["event_type"] for e in events)),
+            "threats": dict(Counter(e["threat_id"] for e in events if e.get("threat_id"))),
+            "sample_limit": 5000, "sample_limited": len(sessions) >= 5000 or len(events) >= 5000,
+            "duration_definition": "Time from entry to last recorded activity or explicit sign out, not attention time."}
+
+
 @app.get("/api/map")
-def map_data(threat: str = "all", region: str = "Global", metric: str = "signal"):
+def map_data(threat: str = "all", region: str = "Global", metric: str = "signal", country: str = "", period: str = ""):
     if threat not in {"all", "measles", "ebola", "cholera"}:
         raise HTTPException(422, "Unsupported threat filter")
     if region not in {
@@ -400,7 +461,7 @@ def map_data(threat: str = "all", region: str = "Global", metric: str = "signal"
     }:
         raise HTTPException(422, "Unsupported WHO region filter")
     assessments = [repo.latest_assessment(item) for item in ("measles", "ebola", "cholera")]
-    return build_map_data([item for item in assessments if item], threat, region, metric)
+    return build_map_data([item for item in assessments if item], threat, region, metric, country, period)
 
 
 @app.post("/api/threats/{threat_id}/assess")
@@ -452,6 +513,29 @@ def ask(request: AskRequest):
         return AskResponse(answer=educational, evidence_ids=[], subject={'label': 'PUBLIC-HEALTH METHODS', 'geography': 'General explanation'}, limitations=['Educational explanation, not a live surveillance finding.'])
     threat_id, resolved = resolve_context(request)
     request = request.model_copy(update={"context": resolved, "threat_id": threat_id})
+    if request.context and request.context.visual == "shared_workspace" and (
+        request.context.region not in {None, "Global"} or
+        (request.context.visual_context or {}).get("country") or
+        (request.context.visual_context or {}).get("period")
+    ):
+        scope = request.context.visual_context or {}
+        selected = analytical_workspace(threat_id or "all", request.context.region or "Global",
+                                        scope.get("country", ""), scope.get("period", ""))["metrics"]
+        if not selected:
+            return AskResponse(answer="No verified observation available for this selection.",
+                               evidence_ids=[], declined=True, subject={"geography": request.context.geography})
+        usable = [m for m in selected if m["value"] is not None]
+        primary = [m for m in usable if m["indicator"] in {"confirmed_cases", "reported_measles_cases", "reported_measles_cases_global", "reported_cholera_awd_cases"}]
+        chosen = (primary or usable)[:12]
+        return AskResponse(
+            answer="Selected verified scope. "+ " ".join(f'{m["threat"].title()} in {m["geography"]["name"]}: {m["value"]:,.0f} {m["unit"]} ({m["indicator"].replace("_", " ")}), reporting through {m["reporting_cutoff"]}.' for m in chosen),
+            evidence_ids=[i for m in chosen for i in m["evidence_ids"]],
+            subject={"label": "SHARED ANALYTICAL SCOPE", "geography": request.context.geography},
+            metrics=[{"label": m["threat"]+" · "+m["geography"]["name"]+" · "+m["indicator"], "value": m["value"], "unit": m["unit"], "evidence_id": m["evidence_ids"][0]} for m in chosen],
+            limitations=["Country observations are not summed into a regional total.", "Up to 12 primary observations shown; inspect the shared evidence table for the full selection.", "Unresolved conflicts are excluded from numeric answers."],
+            sources=[{"organization": m["primary_source"], "title": m["indicator"], "url": m["source_url"],
+                      "published": str(m["publication_date"]) if m["publication_date"] else None,
+                      "reporting_cutoff": str(m["reporting_cutoff"])} for m in chosen])
     if threat_id and threat_id not in {"measles", "ebola", "cholera"}:
         raise HTTPException(422, "Unsupported threat")
     if not threat_id:
@@ -490,6 +574,11 @@ def ask(request: AskRequest):
             },
         )
     q = request.question.lower()
+    from backend.evidence import fuse_observations
+    selected_ids = {g.selected_observation_id for g in fuse_observations(item.observations)}
+    item = item.model_copy(update={"observations": [o for o in item.observations if o.observation_id in selected_ids]})
+    if not item.observations:
+        return AskResponse(answer="No resolved canonical evidence is available for this selection. Inspect the evidence conflicts.", evidence_ids=[], declined=True)
     requested_geography = request.context.geography if request.context else "Global"
     geographic_rows = [
         observation
@@ -595,6 +684,8 @@ def ask(request: AskRequest):
         ]
     if threat_id == "ebola":
         values = {metric["label"]: metric for metric in metrics}
+        if not all(key in values for key in ("Confirmed cases", "Deaths")):
+            return AskResponse(answer="The selected evidence does not resolve both case and death counts. Inspect the source observations and conflicts; missing values are not zero.", evidence_ids=[o.observation_id for o in latest_rows], declined=True, subject=subject, metrics=metrics)
         cases = int(values.get("Confirmed cases", {}).get("value", 0))
         deaths = int(values.get("Deaths", {}).get("value", 0))
         cfr = values.get("Crude reported CFR", {}).get("value")

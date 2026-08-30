@@ -9,6 +9,23 @@ class ProductRepository:
     def __init__(self, memory_repository):
         self.memory = memory_repository
         self._db = None
+        self.sessions = {}
+
+    def save_session(self, session):
+        if self.durable:
+            self.db().collection("product_sessions").document(session["session_id"]).set(session)
+        self.sessions[session["session_id"]] = dict(session)
+
+    def get_session(self, session_id):
+        if self.durable:
+            row = self.db().collection("product_sessions").document(session_id).get()
+            return row.to_dict() if row.exists else None
+        return self.sessions.get(session_id)
+
+    def list_sessions(self, limit=5000):
+        if self.durable:
+            return [d.to_dict() for d in self.db().collection("product_sessions").order_by("started_at", direction=firestore.Query.DESCENDING).limit(limit).stream()]
+        return sorted(self.sessions.values(), key=lambda s: s["started_at"], reverse=True)[:limit]
 
     @property
     def durable(self) -> bool:
@@ -43,7 +60,7 @@ class ProductRepository:
 
     def list_events(self, limit: int = 5000) -> list[dict]:
         if self.durable:
-            return [doc.to_dict() for doc in self.db().collection("events").limit(limit).stream()]
+            return [doc.to_dict() for doc in self.db().collection("events").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()]
         return self.memory.events[-limit:]
 
     def set_account_status(self, user_id: str, status: str) -> dict | None:

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from backend.models.domain import EvidenceGroup, Observation
 
@@ -28,6 +29,8 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
                 o.indicator,
                 o.geography.name.lower(),
                 o.case_definition,
+                o.unit,
+                o.reporting_period_start,
                 o.reporting_period_end or o.event_date,
             )
         ].append(o)
@@ -51,7 +54,7 @@ def fuse_observations(observations: list[Observation]) -> list[EvidenceGroup]:
                 max(items, key=lambda o: (contextual_authority(o), o.retrieved_at)),
                 "resolved",
                 0.95,
-                ["independent_source_agreement", "authority_supported"],
+                ["independent_source_agreement" if len({urlparse(str(o.source_url)).hostname for o in items}) > 1 else "same_authority_agreement", "authority_supported"],
                 [],
             )
         else:

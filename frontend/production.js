@@ -1,6 +1,6 @@
 /* Public analytics are derived from the same canonical snapshots as Ask and maps. */
 (() => {
-  const chartScript=document.createElement('script');chartScript.src='/static/trajectory.js?v=1';document.head.append(chartScript);
+  const chartScript=document.createElement('script');chartScript.src='/static/trajectory.js?v=1';chartScript.onload=()=>{const shared=document.createElement('script');shared.src='/static/workspace.js?v=1';document.head.append(shared)};document.head.append(chartScript);
   const dateLabel = v => v ? new Date(v+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Not stated';
   async function sourceHealth(){
     const r=await fetch('/api/data-status');if(!r.ok)return;const data=await r.json();

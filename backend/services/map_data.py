@@ -1,3 +1,4 @@
+from backend.evidence import fuse_observations
 from backend.models.domain import Assessment, Observation
 
 DEFAULT_INDICATORS = {
@@ -41,7 +42,7 @@ def _latest(rows: list[Observation]) -> list[Observation]:
 
 
 def build_map_data(
-    assessments: list[Assessment], threat: str = "all", region: str = "Global", metric: str = "signal"
+    assessments: list[Assessment], threat: str = "all", region: str = "Global", metric: str = "signal", country: str = "", period: str = ""
 ) -> dict:
     by_country: dict[str, dict] = {}
     coverage: dict[str, dict] = {}
@@ -56,11 +57,15 @@ def build_map_data(
         indicator = SUPPORTED_METRICS[disease].get(metric)
         if not indicator:
             continue
+        selected_ids = {g.selected_observation_id for g in fuse_observations(assessment.observations)}
         rows = _latest(
             [
                 row
                 for row in assessment.observations
                 if row.geography.level == "country" and row.indicator == indicator
+                and row.observation_id in selected_ids
+                and (not country or row.geography.iso3 == country)
+                and (not period or str(row.reporting_period_end) == period)
             ]
         )
         if region != "Global":
@@ -101,7 +106,7 @@ def build_map_data(
             if geo.latitude is None or geo.longitude is None:
                 missing_coordinates.append(signal)
                 continue
-            country = by_country.setdefault(
+            country_entry = by_country.setdefault(
                 key,
                 {
                     "country": geo.name,
@@ -113,7 +118,7 @@ def build_map_data(
                     "signals": [],
                 },
             )
-            country["signals"].append(signal)
+            country_entry["signals"].append(signal)
     return {
         "countries": list(by_country.values()),
         "coverage": coverage,

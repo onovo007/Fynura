@@ -1,5 +1,6 @@
 """Bounded visualization rules using only normalized observations."""
 
+from backend.evidence import fuse_observations
 from backend.models.domain import Assessment, VisualizationPoint, VisualizationSpec
 
 
@@ -18,6 +19,8 @@ def point(o, label=None):
 
 
 def select_visualizations(a: Assessment) -> list[VisualizationSpec]:
+    selected = {g.selected_observation_id for g in fuse_observations(a.observations)}
+    a = a.model_copy(update={"observations": [o for o in a.observations if o.observation_id in selected]})
     if a.threat_id == "ebola":
         rows = sorted(
             (o for o in a.observations if o.indicator == "confirmed_cases"),

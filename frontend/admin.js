@@ -8,3 +8,9 @@ document.querySelector('#search').addEventListener('input',event=>loadUsers(even
 document.querySelector('#users').addEventListener('click',async event=>{const uid=event.target.dataset.disable;if(!uid||!confirm('Disable this account? The user will no longer be able to sign in.'))return;await api(`/api/admin/users/${encodeURIComponent(uid)}/disable`,{method:'POST'});await Promise.all([loadOverview(),loadUsers(document.querySelector('#search').value)])});
 document.querySelector('#logout').addEventListener('click',async()=>{await api('/api/auth/logout',{method:'POST'});location.href='/welcome'});
 Promise.all([loadOverview(),loadUsers()]).catch(error=>status.textContent=error.message);
+async function loadUsage(){
+  const d=await api('/api/admin/usage'),panel=document.createElement('section');panel.className='panel';panel.id='usage';
+  panel.innerHTML='<p>OWNER-ONLY USAGE</p><h2>Sessions and engagement</h2><p>'+d.total_sessions+' sessions · '+d.unique_users+' unique users · '+d.returning_users+' returning users</p><p>Average recorded session duration: '+d.average_active_duration_seconds+' seconds</p><p>'+escapeHtml(d.duration_definition)+'</p><p>Most recent records, up to '+d.sample_limit+'. '+(d.sample_limited?'Sample limit reached; not a lifetime total.':'')+'</p><h3>Sessions by country</h3><div id="usage-countries"></div><h3>Stakeholder roles</h3><div id="usage-roles"></div><h3>Product interactions</h3><div id="usage-events"></div><h3>Threats explored</h3><div id="usage-threats"></div>';
+  document.querySelector('#metrics').after(panel);bars('#usage-countries',d.sessions_by_country);bars('#usage-roles',d.stakeholder_roles);bars('#usage-events',d.events);bars('#usage-threats',d.threats);
+}
+loadUsage().catch(error=>status.textContent=error.message);

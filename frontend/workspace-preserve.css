@@ -1,0 +1,5 @@
+/* Early-signal eligibility remains explicitly dataset-level, outside analytical slicing. */
+.workspace-active #epi-intelligence{display:block}
+.workspace-active #epi-intelligence>.epi-controls,.workspace-active #epi-intelligence>.epi-scroll,.workspace-active #epi-intelligence>h2,.workspace-active #epi-intelligence>small,.workspace-active #epi-intelligence>p:first-of-type{display:none}
+.workspace-active #epi-intelligence>h3:after{content:' — original dataset scope';font-size:14px;font-weight:400}
+.scope-trend{padding:20px}.scope-trend svg{width:100%;height:auto}.scope-trend text{font:12px system-ui;fill:#163c2b}

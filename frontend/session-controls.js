@@ -1,4 +1,12 @@
 (() => {
+  const originalFetch=window.fetch.bind(window);
+  window.fetch=async(...args)=>{
+    const response=await originalFetch(...args);
+    if(response.status===401 && String(args[0]).startsWith('/api/')){
+      location.replace('/welcome'+location.hash);
+    }
+    return response;
+  };
   const button=document.querySelector('#app-signout');if(!button)return;
   const status=document.createElement('p');status.id='signout-status';status.setAttribute('role','status');document.body.append(status);
   button.addEventListener('click',async()=>{
