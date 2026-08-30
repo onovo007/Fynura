@@ -25,7 +25,17 @@ def percent_change(current: Observation, previous: Observation) -> DerivedMetric
 
 
 def crude_cfr(deaths: Observation, cases: Observation) -> DerivedMetric:
-    valid = cases.value > 0 and deaths.value >= 0 and deaths.value <= cases.value
+    compatible = (
+        deaths.threat_id == cases.threat_id
+        and deaths.geography == cases.geography
+        and deaths.reporting_period_start == cases.reporting_period_start
+        and (deaths.reporting_period_end or deaths.event_date) == (cases.reporting_period_end or cases.event_date)
+        and deaths.case_definition == cases.case_definition
+        and bool(cases.case_definition)
+        and deaths.unit == cases.unit
+        and bool(cases.reporting_period_end or cases.event_date)
+    )
+    valid = compatible and cases.value > 0 and 0 <= deaths.value <= cases.value
     return DerivedMetric(
         name="crude_case_fatality_ratio",
         value=(deaths.value / cases.value * 100) if valid else None,

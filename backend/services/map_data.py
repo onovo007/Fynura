@@ -49,7 +49,8 @@ def build_map_data(
     available_metrics: dict[str, list[str]] = {}
     for assessment in assessments:
         disease = assessment.threat_id
-        available_metrics[disease] = list(SUPPORTED_METRICS[disease])
+        available_metrics[disease] = [key for key, value in SUPPORTED_METRICS[disease].items()
+                                      if any(o.indicator == value and o.geography.level == 'country' for o in assessment.observations)]
         if threat != "all" and disease != threat:
             continue
         indicator = SUPPORTED_METRICS[disease].get(metric)

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from backend.evidence.fusion import contextual_authority
 from backend.models.domain import EvidenceGroup, Observation
 
@@ -20,7 +22,7 @@ def _recency(observations: list[Observation]) -> float:
     for item in observations:
         cutoff = item.reporting_period_end or item.event_date or item.publication_date
         if cutoff:
-            ages.append(max(0, (item.retrieved_at.date() - cutoff).days))
+            ages.append(max(0, (datetime.now(UTC).date() - cutoff).days))
     if not ages:
         return 0.35
     age = min(ages)
@@ -38,7 +40,7 @@ def _recency(observations: list[Observation]) -> float:
 def calculate_confidence(observations: list[Observation], groups: list[EvidenceGroup]) -> dict:
     if not observations:
         return {"score": 0.0, "level": "INSUFFICIENT", "components": {}, "model": MODEL}
-    source_ids = {item.source_id for item in observations}
+    source_ids = {'who' if item.source_url.host == 'who.int' or item.source_url.host.endswith('.who.int') else item.source_id for item in observations}
     resolved = [group for group in groups if group.status == "resolved"]
     conflicted = [group for group in groups if group.status == "conflicted"]
     complete = [
@@ -77,7 +79,7 @@ def calculate_confidence(observations: list[Observation], groups: list[EvidenceG
     if conflicted:
         limitations.append("At least one comparable evidence group has unresolved conflict.")
     if components["recency"] < 0.7:
-        limitations.append("The reporting cutoff is stale relative to retrieval.")
+        limitations.append("The reporting cutoff is stale relative to the current evaluation date.")
     return {
         "score": score,
         "level": level,

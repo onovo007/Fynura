@@ -15,7 +15,10 @@ from pydantic import BaseModel, Field, field_validator
 
 from backend.config import get_settings
 from backend.models.domain import AskRequest, AskResponse, Watch
-from backend.repositories import MemoryRepository, ProductRepository
+from backend.repositories import ProductRepository
+from backend.repositories.evidence import EvidenceRepository
+from backend.services.analytics import intelligence_snapshot
+from backend.services.context import resolve_context
 from backend.services.identity import (
     create_session_cookie,
     optional_identity,
@@ -24,6 +27,8 @@ from backend.services.identity import (
 )
 from backend.services.map_data import build_map_data
 from backend.services.pipeline import Pipeline
+from backend.services.refresh import RefreshService
+from backend.services.science import science_answer
 from backend.services.source_registry import network_summary, sources
 from backend.services.visualization import select_visualizations
 
@@ -38,9 +43,10 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
-repo = MemoryRepository()
+repo = EvidenceRepository()
 product_repo = ProductRepository(repo)
 pipeline = Pipeline(repo)
+refresh_service = RefreshService(repo, pipeline)
 settings = get_settings()
 OwnerIdentity = Annotated[dict, Depends(require_owner)]
 SignedInIdentity = Annotated[dict, Depends(require_identity)]
@@ -318,20 +324,55 @@ async def intelligence():
         existing = repo.latest_assessment(threat_id)
         if existing:
             return existing
-        try:
-            if threat_id == "measles":
-                return await pipeline.assess_measles()
-            if threat_id == "ebola":
-                return await pipeline.assess_ebola()
-            return await pipeline.assess_cholera()
-        except Exception:
-            logging.getLogger("fynura.bootstrap").exception(
-                "initial intelligence refresh failed", extra={"threat_id": threat_id}
-            )
-            return repo.latest_assessment(threat_id)
+        return await refresh_service.refresh(threat_id)
 
     values = await asyncio.gather(*(ensure(x) for x in ("measles", "ebola", "cholera")))
     return {item.threat_id: item for item in values if item}
+
+
+@app.post('/internal/refresh')
+async def scheduled_refresh(request: Request):
+    from google.auth.transport.requests import Request as GoogleRequest
+    from google.oauth2.id_token import verify_oauth2_token
+
+    token = request.headers.get('authorization', '').removeprefix('Bearer ')
+    if not token:
+        raise HTTPException(403, 'Authorized scheduler identity required')
+    audience = 'https://fynura-g7sjcbc4ua-uc.a.run.app'
+    try:
+        identity = verify_oauth2_token(token, GoogleRequest(), audience=audience)
+        expected = f'fynura-scheduler@{settings.google_cloud_project}.iam.gserviceaccount.com'
+        if identity.get('email') != expected or not identity.get('email_verified'):
+            raise ValueError('Unapproved caller')
+    except Exception as exc:
+        raise HTTPException(403, 'Authorized scheduler identity required') from exc
+    values = await refresh_service.run()
+    return {'available': [item.threat_id for item in values if item]}
+
+
+@app.get('/api/data-status')
+def data_status():
+    snapshots = [repo.latest_assessment(t) for t in ('measles', 'ebola', 'cholera')]
+    network = []
+    for source in sources():
+        status = source['integration_status'].upper().replace('_', ' ')
+        if source['source_id'] == 'who_global_surveillance':
+            status = 'VERIFIED SNAPSHOT' if any(snapshots) else 'CONFIGURED'
+        network.append({'name': source['display_name'], 'status': status})
+    return {'network': network, 'verified_snapshots': sum(x is not None for x in snapshots),
+            'threats_monitored': 3,
+            'refresh': {t: refresh_service.status(t) for t in ('measles', 'ebola', 'cholera')}}
+
+
+@app.get('/api/admin/source-health')
+def admin_source_health(_: OwnerIdentity):
+    return {'sources': sources(), 'refresh': data_status()['refresh']}
+
+
+@app.get('/api/analytics')
+def analytics():
+    items = [repo.latest_assessment(t) for t in ('measles', 'ebola', 'cholera')]
+    return [snapshot for item in items if item for snapshot in [intelligence_snapshot(item)] if snapshot]
 
 
 @app.get("/api/map")
@@ -353,7 +394,7 @@ def map_data(threat: str = "all", region: str = "Global", metric: str = "signal"
 
 
 @app.post("/api/threats/{threat_id}/assess")
-async def assess(threat_id: str):
+async def assess(threat_id: str, _: OwnerIdentity):
     if threat_id not in {"measles", "ebola", "cholera"}:
         raise HTTPException(404, "Unknown threat")
     try:
@@ -363,7 +404,7 @@ async def assess(threat_id: str):
             return await pipeline.assess_ebola()
         return await pipeline.assess_cholera()
     except Exception as exc:
-        raise HTTPException(502, str(exc)) from exc
+        raise HTTPException(502, "Source retrieval could not complete; the latest verified snapshot is retained.") from exc
 
 
 @app.get("/api/threats/{threat_id}/assessments/latest")
@@ -396,13 +437,19 @@ def visualizations(assessment_id: str):
 
 @app.post("/api/ask", response_model=AskResponse)
 def ask(request: AskRequest):
-    threat_id = request.context.threat_id if request.context else request.threat_id
+    educational = science_answer(request.question)
+    if educational:
+        return AskResponse(answer=educational, evidence_ids=[], subject={'label': 'PUBLIC-HEALTH METHODS', 'geography': 'General explanation'}, limitations=['Educational explanation, not a live surveillance finding.'])
+    threat_id, resolved = resolve_context(request)
+    request = request.model_copy(update={"context": resolved, "threat_id": threat_id})
+    if threat_id and threat_id not in {"measles", "ebola", "cholera"}:
+        raise HTTPException(422, "Unsupported threat")
     if not threat_id:
         available = [repo.latest_assessment(x) for x in ("ebola", "measles", "cholera")]
         available = [item for item in available if item]
         if not available:
             return AskResponse(
-                answer="Fynura is monitoring Ebola, Measles and Cholera, but no verified assessments are loaded in this process yet.",
+                answer="No verified evidence is currently available. View data status for the latest source availability.",
                 evidence_ids=[],
                 declined=True,
                 subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
@@ -424,7 +471,7 @@ def ask(request: AskRequest):
     item = repo.latest_assessment(threat_id)
     if not item:
         return AskResponse(
-            answer=f"Fynura has no stored assessment for {threat_id} yet. Refresh that threat's evidence first.",
+            answer=f"No verified evidence is currently available for {threat_id} in the selected scope. View data status for source availability.",
             evidence_ids=[],
             declined=True,
             subject={
@@ -437,7 +484,7 @@ def ask(request: AskRequest):
     geographic_rows = [
         observation
         for observation in item.observations
-        if requested_geography.lower()
+        if requested_geography.lower() != 'global' and requested_geography.lower()
         in {
             observation.geography.name.lower(),
             (observation.geography.source_name or "").lower(),
@@ -446,6 +493,10 @@ def ask(request: AskRequest):
         }
     ]
     scoped_rows = geographic_rows or item.observations
+    if not geographic_rows and requested_geography not in {'Global', 'Configured scope', item.geography.name}:
+        return AskResponse(answer=f'No verified evidence is currently available for {threat_id} in {requested_geography}.', evidence_ids=[], declined=True, subject={'disease': threat_id, 'geography': requested_geography})
+    if not geographic_rows:
+        scoped_rows = [o for o in item.observations if o.geography.name == item.geography.name] or item.observations
     latest = max(
         scoped_rows,
         key=lambda o: o.reporting_period_end or o.event_date or o.retrieved_at.date(),
@@ -486,6 +537,8 @@ def ask(request: AskRequest):
     latest_rows = [
         o for o in scoped_rows if (o.reporting_period_end or o.event_date) == cutoff
     ]
+    if not latest_rows:
+        return AskResponse(answer='No compatible verified observations are available for this reporting cutoff. Select the latest evidence view.', evidence_ids=[], declined=True, subject=subject)
     if threat_id == "measles" and not geographic_rows:
         latest_rows = [
             o
@@ -583,7 +636,7 @@ def ask(request: AskRequest):
         opening = f"For the selected {label}, the recommended primary citation is the {dataset} published by the World Health Organization."
     if any(name in q for name in ("africa cdc", "ecdc", "paho", "compare who", "sources agree")):
         opening = f"Only WHO currently contributes verified observations to this {label} view. Configured or candidate authorities are not counted as corroboration, and overlapping reports are never summed."
-    refs = sorted({eid for claim in item.claims for eid in claim.evidence_ids})
+    refs = sorted({o.observation_id for o in latest_rows})
     return AskResponse(
         answer=opening,
         evidence_ids=refs,

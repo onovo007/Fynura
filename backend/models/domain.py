@@ -119,6 +119,9 @@ class Watch(BaseModel):
 
 
 class ContextEnvelope(BaseModel):
+    region: str | None = None
+    visual_context: dict[str, Any] | None = None
+    stakeholder_role: str | None = None
     threat_id: str | None = None
     disease: str | None = None
     outbreak_or_dataset: str | None = None
