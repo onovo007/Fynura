@@ -31,12 +31,34 @@ def test_five_frame_story_keeps_accessibility_controls():
     script = (ROOT / 'frontend/entry-story.js').read_text(encoding='utf-8')
     style = (ROOT / 'frontend/entry-sequence.css').read_text(encoding='utf-8')
     for name in ('map', 'analysis', 'communities', 'surveillance', 'protection'):
-        assert f'story-{name}' in script
-    assert '50s' in style
+        assert f"['{name}'" in script
+    assert '10000' in script
+    assert 'opacity 1.3s' in style
     assert 'prefers-reduced-motion' in style
-    assert 'animation-play-state:paused' in style
+    assert 'clearTimeout(timer)' in script
     assert 'aria-pressed' in script
-    assert '/static/entry-sequence.css?v=1' in script
+    assert '/static/entry-sequence.css?v=2' in script
+    assert '74svh' in style
+    assert script.index("['surveillance'") < script.index("['analysis'") < script.index("['protection'") < script.index("['map'") < script.index("['communities'")
+
+
+def test_main_app_has_logout_and_cache_protection():
+    from fastapi.testclient import TestClient
+    from backend.main import app
+
+    page = BeautifulSoup((ROOT / 'frontend/index.html').read_text(encoding='utf-8'), 'html.parser')
+    assert page.select_one('#app-signout').get_text() == 'Sign out'
+    assert page.select_one('script[src="/static/session-controls.js?v=1"]')
+    script = (ROOT / 'frontend/session-controls.js').read_text(encoding='utf-8')
+    assert "/api/auth/logout" in script
+    assert "location.replace('/welcome')" in script
+    client = TestClient(app)
+    response = client.post('/api/auth/logout')
+    assert response.status_code == 204
+    assert 'Max-Age=0' in response.headers['set-cookie']
+    assert response.headers['cache-control'] == 'no-store'
+    assert client.get('/welcome').headers['cache-control'] == 'no-store'
+    assert client.get('/static/session-controls.js').headers['cache-control'] == 'no-cache'
 
 
 def test_transition_only_follows_successful_onboarding():

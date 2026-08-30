@@ -54,6 +54,16 @@ ROOT = Path(__file__).resolve().parents[1]
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")
 
 
+@app.middleware("http")
+async def frontend_cache_policy(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path in {"/", "/welcome", "/admin"} or request.url.path.startswith("/api/auth/"):
+        response.headers["Cache-Control"] = "no-store"
+    elif request.url.path.startswith("/static/") and request.url.path.endswith((".js", ".css", ".html")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/", include_in_schema=False)
 def home(request: Request):
     if settings.fynura_onboarding_required and not optional_identity(request):
