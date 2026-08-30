@@ -6,7 +6,8 @@ const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'frontend', 'assets');
 fs.mkdirSync(output, {recursive:true});
 (async()=>{
-  for (const [number,name] of [[1,'map'],[2,'analysis'],[3,'communities']]) {
-    await sharp(path.join(root,'images',`image ${number}.jpg`)).rotate().resize({width:1920,withoutEnlargement:true}).webp({quality:78}).toFile(path.join(output,`entry-${name}.webp`));
+  for (const [number,name] of [[1,'map'],[2,'analysis'],[3,'communities'],[4,'surveillance'],[5,'protection']]) {
+    const filename = `${number > 3 ? 'Image' : 'image'} ${number}.jpg`;
+    await sharp(path.join(root,'images',filename)).rotate().resize({width:1920,height:1920,fit:'inside',withoutEnlargement:true}).webp({quality:78}).toFile(path.join(output,`entry-${name}.webp`));
   }
 })();

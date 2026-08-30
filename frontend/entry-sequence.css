@@ -1,0 +1,10 @@
+/* Five illustrative photographs; overlapping fades maintain a continuous backdrop. */
+.entry-story.story-loaded .story-image{animation:fiveFrameStory 50s linear infinite;opacity:0}
+.entry-story.story-loaded .story-map{animation-delay:0s}
+.entry-story.story-loaded .story-analysis{animation-delay:-40s}
+.entry-story.story-loaded .story-communities{animation-delay:-30s}
+.entry-story.story-loaded .story-surveillance{background-image:url('/static/assets/entry-surveillance.webp');animation-delay:-20s}
+.entry-story.story-loaded .story-protection{background-image:url('/static/assets/entry-protection.webp');background-position:center 25%;animation-delay:-10s}
+.entry-story.story-loaded.story-paused .story-image{animation-play-state:paused}
+@keyframes fiveFrameStory{0%,18%{opacity:1}22%,98%{opacity:0}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.entry-story.story-loaded .story-image{animation:none!important;opacity:0}.entry-story.story-loaded .story-map{opacity:1}}

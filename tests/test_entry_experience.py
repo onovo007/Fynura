@@ -17,7 +17,7 @@ def test_entry_preserves_google_identity_and_privacy_contract():
 
 
 def test_entry_assets_optimized_and_explicitly_mapped():
-    for name in ('map', 'analysis', 'communities'):
+    for name in ('map', 'analysis', 'communities', 'surveillance', 'protection'):
         asset = ROOT / f'frontend/assets/entry-{name}.webp'
         assert asset.is_file()
         assert asset.stat().st_size < 350_000
@@ -25,6 +25,18 @@ def test_entry_assets_optimized_and_explicitly_mapped():
     assert 'entry-analysis.webp' in style and 'entry-communities.webp' in style
     assert 'prefers-reduced-motion' in style
     assert 'animation-play-state:paused' in style
+
+
+def test_five_frame_story_keeps_accessibility_controls():
+    script = (ROOT / 'frontend/entry-story.js').read_text(encoding='utf-8')
+    style = (ROOT / 'frontend/entry-sequence.css').read_text(encoding='utf-8')
+    for name in ('map', 'analysis', 'communities', 'surveillance', 'protection'):
+        assert f'story-{name}' in script
+    assert '50s' in style
+    assert 'prefers-reduced-motion' in style
+    assert 'animation-play-state:paused' in style
+    assert 'aria-pressed' in script
+    assert '/static/entry-sequence.css?v=1' in script
 
 
 def test_transition_only_follows_successful_onboarding():
