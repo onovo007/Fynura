@@ -47,3 +47,10 @@ def test_unresolved_conflict_reduces_confidence():
 
 def test_missing_provenance_reduces_confidence():
     assert score([observation()]) > score([observation(excerpt="")])
+
+
+def test_who_derived_owid_does_not_add_an_independent_authority():
+    rows = [observation(source='who'), observation(source='owid_who_history')]
+    result = calculate_confidence(rows, fuse_observations(rows))
+    assert result['source_count'] == 1
+    assert result['components']['source_independence'] == 0.55

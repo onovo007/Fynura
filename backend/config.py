@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     google_cloud_location: str = "us-central1"
     google_genai_use_vertexai: bool = True
     fynura_env: str = "development"
-    fynura_model: str = "gemini-2.5-flash"
+    fynura_chat_model: str = "gemini-3.7-flash"
+    fynura_chat_location: str = "global"
     fynura_use_firestore: bool = False
     fynura_live_fetch: bool = True
     fynura_onboarding_required: bool = False
@@ -19,6 +20,11 @@ class Settings(BaseSettings):
     fynura_auth_domain: str = "fynura-public-health.firebaseapp.com"
     fynura_session_days: int = 5
     request_timeout_seconds: float = 20.0
+
+    @property
+    def fynura_model(self) -> str:
+        """Legacy readers use the same centralized model; no old-model fallback."""
+        return self.fynura_chat_model
 
 
 @lru_cache

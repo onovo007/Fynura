@@ -59,7 +59,7 @@
     setContext(context(filters.threat==='all'?null:filters.threat));
   }
   const originalContext=contextFor;
-  contextFor=function(id,spec){return current&&(filters.country||filters.region!=='Global'||filters.period)?context(id):originalContext(id,spec)};
+  contextFor=function(id,spec){return current&&(filters.country||filters.region!=='Global'||filters.period)?context(id):(intel.visualContext?.threat_id===id?intel.visualContext:originalContext(id,spec))};
   const originalVisual=showVisual;
   showVisual=function(id){
     originalVisual(id);
@@ -85,7 +85,7 @@
         };
       }
     }
-    setContext(context(filters.threat==='all'?null:id));productEvent('chart_viewed','visualization',id);
+    setContext((!filters.country&&filters.region==='Global'&&!filters.period&&intel.visualContext)||context(filters.threat==='all'?null:id));productEvent('chart_viewed','visualization',id);
   };
   async function apply(){
     controls();if(!document.querySelector('#workspace-filters'))return;
@@ -107,6 +107,13 @@
     if(event)productEvent(event,'workspace',filters.threat==='all'?undefined:filters.threat);
   });
   const askBefore=contextualAsk;
-  contextualAsk=async function(question,provided){if((question||document.querySelector('#chat-q')?.value||'').trim())productEvent('ask_fynura_submitted','ask_fynura',filters.threat==='all'?undefined:filters.threat);return askBefore(question,provided)};
+  contextualAsk=async function(question,provided){
+    const q=(question||document.querySelector('#chat-q')?.value||'').trim();
+    const normalized=q.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ');
+    const overview=!/\b(measles|ebola|cholera|this|these|selected|here|that)\b/.test(normalized)&&/\b(health threats?|public health situation|outbreaks|disease threats?|threats)\b/.test(normalized)&&/\b(current|latest|now|today|monitoring|monitored|active|emerging|overview|what|whats|which)\b/.test(normalized);
+    if(overview){provided=null;setContext(null)}
+    if(q)productEvent('ask_fynura_submitted','ask_fynura',overview?undefined:filters.threat==='all'?undefined:filters.threat);
+    return askBefore(question,provided)
+  };
   if(Object.keys(intel.data).length)apply();
 })();

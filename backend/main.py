@@ -9,6 +9,10 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import StreamingResponse
+from backend.services.research_chat import ResearchRequest, research_events
+from backend.services.intelligence import intelligence_events
+import json
 from fastapi.staticfiles import StaticFiles
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, Field, field_validator
@@ -19,6 +23,7 @@ from backend.repositories import ProductRepository
 from backend.repositories.evidence import EvidenceRepository
 from backend.services.analytics import intelligence_snapshot
 from backend.services.history import history_metadata, historical_series, historical_answer
+from backend.services.briefs import create_brief, wants_brief
 from backend.services.context import resolve_context
 from backend.services.identity import (
     create_session_cookie,
@@ -520,11 +525,73 @@ def visualizations(assessment_id: str):
     return select_visualizations(item)
 
 
+research_slots = asyncio.Semaphore(4)
+
+
+@app.get('/api/early-signals')
+def historical_early_signals(country: str = 'USA'):
+    from backend.services.early_history import early_history
+    try:
+        return early_history(country)
+    except ValueError:
+        raise HTTPException(400, 'Choose an available country')
+
+
+@app.post("/api/chat/stream")
+async def research_chat(request: ResearchRequest):
+    # Existing session middleware also protects this route in production.
+    async def events():
+        try:
+            async with asyncio.timeout(5):
+                await research_slots.acquire()
+        except TimeoutError:
+            yield json.dumps({"type": "error", "message": "Research is busy. Please retry shortly."}) + "\n"
+            return
+        try:
+            async for event in intelligence_events(request, structured_answer, data_status, research_events):
+                yield json.dumps(event) + "\n"
+        except Exception as error:
+            logging.getLogger(__name__).warning("Research unavailable: %s", type(error).__name__)
+            yield json.dumps({"type": "error", "message": "Live research could not complete. Please retry. No cached answer has been substituted for live research."}) + "\n"
+        finally:
+            research_slots.release()
+    return StreamingResponse(events(), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
 @app.post("/api/ask", response_model=AskResponse)
-def ask(request: AskRequest):
-    educational = science_answer(request.question)
-    if educational:
-        return AskResponse(answer=educational, evidence_ids=[], subject={'label': 'PUBLIC-HEALTH METHODS', 'geography': 'General explanation'}, limitations=['Educational explanation, not a live surveillance finding.'])
+def ask(request: ResearchRequest):
+    if not isinstance(request, ResearchRequest):
+        request = ResearchRequest.model_validate(request.model_dump())
+    async def collect():
+        async for event in intelligence_events(request, structured_answer, data_status, research_events):
+            if event['type'] == 'answer':
+                return AskResponse.model_validate(event['data'])
+        raise RuntimeError('No response received')
+    try:
+        answer = asyncio.run(collect())
+    except Exception as error:
+        logging.getLogger(__name__).warning('Intelligence unavailable: %s', type(error).__name__)
+        raise HTTPException(503, 'Fynura could not complete this request. Please retry.') from error
+    return answer
+
+
+def structured_answer(request):
+    answer = answer_question(request)
+    if wants_brief(request.question) and not answer.declined:
+        named = next((t for t in ('measles', 'cholera', 'ebola') if t in request.question.lower()), None)
+        threat = named or request.threat_id or (request.context.threat_id if request.context else None)
+        latest = repo.latest_assessment(threat) if threat in {'measles', 'cholera', 'ebola'} else None
+        answer.brief = create_brief(request, answer, latest)
+        if answer.brief is None:
+            answer.limitations = list(answer.limitations) + ['A sourced outbreak brief or infographic cannot be generated without supporting surveillance evidence. Select a threat or historical dataset and retry.']
+    return answer
+
+
+def answer_question(request: AskRequest):
+    from backend.services.context import is_threat_overview
+    from backend.services.overview import threat_overview
+    if is_threat_overview(request.question):
+        return threat_overview({t: repo.latest_assessment(t) for t in ('ebola', 'measles', 'cholera')})
     historical = historical_answer(request)
     if historical:
         return historical
@@ -565,20 +632,7 @@ def ask(request: AskRequest):
                 declined=True,
                 subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
             )
-        answer = (
-            "Fynura is currently monitoring three demonstration threats: Ebola, Measles and Cholera. "
-            + " ".join(item.summary for item in available)
-        )
-        return AskResponse(
-            answer=answer,
-            evidence_ids=sorted(
-                {eid for item in available for claim in item.claims for eid in claim.evidence_ids}
-            ),
-            subject={"label": "GLOBAL INTELLIGENCE", "geography": "Global"},
-            limitations=[
-                "Coverage is demonstrative and source reporting periods differ across threats."
-            ],
-        )
+        return threat_overview({t: repo.latest_assessment(t) for t in ('ebola', 'measles', 'cholera')})
     item = repo.latest_assessment(threat_id)
     if not item:
         return AskResponse(
@@ -664,6 +718,7 @@ def ask(request: AskRequest):
     metric_labels = {
         "confirmed_cases": "Confirmed cases",
         "reported_measles_cases_global": "Provisional cases",
+        "reported_measles_cases": "Provisional cases",
         "reported_cholera_awd_cases": "Reported cases",
         "reported_deaths": "Deaths",
         "crude_cfr": "Crude reported CFR",
@@ -708,7 +763,7 @@ def ask(request: AskRequest):
         cfr = values.get("Crude reported CFR", {}).get("value")
         zones = values.get("Affected health zones", {}).get("value")
         opening = (
-            f"The current {label} in the {geography} remains a major public-health event. "
+            f"{geography}: {label}. "
             f"WHO reports cumulative outbreak totals of {cases:,} confirmed cases and {deaths:,} deaths through {cutoff}"
             f"{f', corresponding to a crude reported CFR of {cfr:.1f}%' if cfr is not None else ''}."
             f"{f' Transmission has been reported across {int(zones)} health zones.' if zones is not None else ''}"
@@ -728,16 +783,31 @@ def ask(request: AskRequest):
     elif threat_id == "measles":
         opening = f"The selected view summarizes {label} for the latest sufficiently complete period ending {cutoff}. {item.summary}"
     else:
-        opening = f"The selected view summarizes {label} through {cutoff}. {item.summary}"
+        opening = f"WHO surveillance reports through {cutoff}: {item.summary}"
     changed = None
+    comparison_rows = []
     if "changed" in q:
-        if item.delta and threat_id == "ebola":
-            changed = f"Compared with the preceding compatible WHO report, confirmed cases increased by {int(item.delta['confirmed_cases']):,}, from {int(item.delta['previous_cases']):,} to {int(item.delta['current_cases']):,}."
+        current_case = next((o for o in latest_rows if o.indicator == 'confirmed_cases'), None)
+        prior = [o for o in scoped_rows if current_case and o.indicator == current_case.indicator
+                 and o.geography == current_case.geography and o.unit == current_case.unit
+                 and o.case_definition == current_case.case_definition and bool(o.case_definition)
+                 and o.source_id == current_case.source_id
+                 and o.reporting_period_start == current_case.reporting_period_start
+                 and (o.reporting_period_end or o.event_date) and cutoff
+                 and (o.reporting_period_end or o.event_date) < cutoff]
+        if threat_id == 'ebola' and current_case and prior:
+            previous_case = max(prior, key=lambda o:o.reporting_period_end or o.event_date)
+            comparison_rows = [previous_case]
+            difference = current_case.value - previous_case.value
+            percentage = f" ({difference / previous_case.value * 100:+.1f}%)" if previous_case.value > 0 else ' (percentage change is undefined from a zero baseline)'
+            changed = (f"Across compatible WHO reports from {previous_case.reporting_period_end or previous_case.event_date} to {cutoff}, "
+                       f"cumulative confirmed cases changed from {previous_case.value:,.0f} to {current_case.value:,.0f}: {difference:+,.0f}{percentage}. "
+                       'Changes in reported cumulative totals may include revisions and reporting backlogs.')
         else:
             changed = "Fynura has the current verified observation but does not yet have a compatible preceding observation for a reliable change calculation."
         opening = f"{opening} {changed}"
     unique_sources = {}
-    for observation in latest_rows or [latest]:
+    for observation in (latest_rows or [latest]) + comparison_rows:
         unique_sources[str(observation.source_url)] = {
             "organization": "World Health Organization",
             "title": dataset,
@@ -754,7 +824,7 @@ def ask(request: AskRequest):
         opening = f"For the selected {label}, the recommended primary citation is the {dataset} published by the World Health Organization."
     if any(name in q for name in ("africa cdc", "ecdc", "paho", "compare who", "sources agree")):
         opening = f"Only WHO currently contributes verified observations to this {label} view. Configured or candidate authorities are not counted as corroboration, and overlapping reports are never summed."
-    refs = sorted({o.observation_id for o in latest_rows})
+    refs = sorted({o.observation_id for o in latest_rows + comparison_rows})
     return AskResponse(
         answer=opening,
         evidence_ids=refs,

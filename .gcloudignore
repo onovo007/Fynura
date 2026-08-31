@@ -7,4 +7,6 @@ __pycache__
 .pytest_cache
 .venv
 tests
-
+tmp/
+.ruff_cache/
+Fynura_Submission_Package_*.zip

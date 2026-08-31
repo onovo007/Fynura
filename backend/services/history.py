@@ -73,7 +73,7 @@ def historical_answer(request):
         return AskResponse(answer="Choose a disease and country in Historical evidence to ask about past reports.", evidence_ids=[], declined=True)
     options = catalog()["datasets"][threat]["countries"]
     aliases = {"usa": "USA", "united states": "USA", "us ": "USA", "uk": "GBR"}
-    country = next((c["code"] for c in options if c["name"].lower() in q or re.search(r"\b"+re.escape(c["code"].lower())+r"\b", q)), None)
+    country = next((c["code"] for c in sorted(options, key=lambda c: len(c['name']), reverse=True) if re.search(r"\b"+re.escape(c["name"].lower())+r"\b", q) or re.search(r"\b"+re.escape(c["code"].lower())+r"\b", q)), None)
     country = country or next((code for name, code in aliases.items() if re.search(r"\b"+re.escape(name.strip())+r"\b", q) and any(c["code"] == code for c in options)), None)
     if not country and context and context.geography:
         country = next((c['code'] for c in options if c['name'].lower() == context.geography.lower()), None)

@@ -40,7 +40,9 @@ def _recency(observations: list[Observation]) -> float:
 def calculate_confidence(observations: list[Observation], groups: list[EvidenceGroup]) -> dict:
     if not observations:
         return {"score": 0.0, "level": "INSUFFICIENT", "components": {}, "model": MODEL}
-    source_ids = {'who' if item.source_url.host == 'who.int' or item.source_url.host.endswith('.who.int') else item.source_id for item in observations}
+    # WHO-derived OWID series and WHO regional republication share one origin.
+    source_ids = {'who' if item.source_url.host == 'who.int' or item.source_url.host.endswith('.who.int')
+                  or item.source_id.startswith('owid_who') else item.source_id for item in observations}
     resolved = [group for group in groups if group.status == "resolved"]
     conflicted = [group for group in groups if group.status == "conflicted"]
     complete = [

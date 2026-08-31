@@ -142,8 +142,20 @@ class AskRequest(BaseModel):
 
 
 class AskResponse(BaseModel):
+    mode: str | None = None
+    supports: list[dict[str, Any]] = []
+    evidence_status: str | None = None
+    evidence_support: str | None = None
+    model: str | None = None
+    disciplines: str | None = None
+    followups: list[str] = []
+    suggestions: str = ""
+    router_version: str | None = None
+    signal: dict[str, Any] | None = None
+    surveillance: dict[str, Any] | None = None
+    brief: dict[str, Any] | None = None
     answer: str
-    evidence_ids: list[str]
+    evidence_ids: list[str] = []
     declined: bool = False
     visualization_available: bool = False
     subject: dict[str, Any] = {}
