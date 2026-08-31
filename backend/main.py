@@ -18,6 +18,7 @@ from backend.models.domain import AskRequest, AskResponse, Watch
 from backend.repositories import ProductRepository
 from backend.repositories.evidence import EvidenceRepository
 from backend.services.analytics import intelligence_snapshot
+from backend.services.history import history_metadata, historical_series, historical_answer
 from backend.services.context import resolve_context
 from backend.services.identity import (
     create_session_cookie,
@@ -421,6 +422,19 @@ def analytics():
     return [snapshot for item in items if item for snapshot in [intelligence_snapshot(item)] if snapshot]
 
 
+@app.get('/api/history')
+def historical_metadata():
+    return history_metadata()
+
+
+@app.get('/api/history/{threat}')
+def historical_data(threat: str, country: str, start: int = 2010, end: int = 2026):
+    try:
+        return historical_series(threat, country, start, end)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+
+
 @app.get("/api/workspace")
 def analytical_workspace(threat: str = "all", region: str = "Global", country: str = "", period: str = ""):
     if threat not in {"all", "measles", "ebola", "cholera"}:
@@ -511,6 +525,9 @@ def ask(request: AskRequest):
     educational = science_answer(request.question)
     if educational:
         return AskResponse(answer=educational, evidence_ids=[], subject={'label': 'PUBLIC-HEALTH METHODS', 'geography': 'General explanation'}, limitations=['Educational explanation, not a live surveillance finding.'])
+    historical = historical_answer(request)
+    if historical:
+        return historical
     threat_id, resolved = resolve_context(request)
     request = request.model_copy(update={"context": resolved, "threat_id": threat_id})
     if request.context and request.context.visual == "shared_workspace" and (
@@ -692,7 +709,7 @@ def ask(request: AskRequest):
         zones = values.get("Affected health zones", {}).get("value")
         opening = (
             f"The current {label} in the {geography} remains a major public-health event. "
-            f"WHO reports {cases:,} confirmed cases and {deaths:,} deaths through {cutoff}"
+            f"WHO reports cumulative outbreak totals of {cases:,} confirmed cases and {deaths:,} deaths through {cutoff}"
             f"{f', corresponding to a crude reported CFR of {cfr:.1f}%' if cfr is not None else ''}."
             f"{f' Transmission has been reported across {int(zones)} health zones.' if zones is not None else ''}"
         )

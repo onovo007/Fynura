@@ -1,5 +1,7 @@
 /* Public analytics are derived from the same canonical snapshots as Ask and maps. */
 (() => {
+  const historyStyle=document.createElement('link');historyStyle.rel='stylesheet';historyStyle.href='/static/history-polish.css?v=2';document.head.append(historyStyle);
+  const historyScript=document.createElement('script');historyScript.src='/static/history.js?v=1';document.head.append(historyScript);
   const chartScript=document.createElement('script');chartScript.src='/static/trajectory.js?v=1';chartScript.onload=()=>{const shared=document.createElement('script');shared.src='/static/workspace.js?v=1';document.head.append(shared)};document.head.append(chartScript);
   const dateLabel = v => v ? new Date(v+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Not stated';
   async function sourceHealth(){

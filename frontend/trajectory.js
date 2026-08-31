@@ -22,6 +22,19 @@
       };
       select.onchange=draw;draw();
     }
+    if(id==='measles'){
+      const rows=a.observations.filter(o=>o.indicator==='reported_measles_cases'&&o.geography.level==='country'&&o.reporting_period_end===spec.reporting_cutoff).sort((a,b)=>b.value-a.value);
+      const controls=document.createElement('div');controls.className='epi-controls';
+      controls.innerHTML='<label>Country view <select aria-label="Measles country view"><option value="top">Top 10 countries</option><option value="all">All reporting countries</option>'+rows.map(o=>'<option value="'+safe(o.geography.name)+'">'+safe(o.geography.name)+'</option>').join('')+'</select></label>';
+      const wrap=card.querySelector('.chart-wrap');wrap.before(controls);
+      const draw=()=>{
+        const choice=controls.querySelector('select').value,selected=choice==='top'?rows.slice(0,10):choice==='all'?rows:rows.filter(o=>o.geography.name===choice);
+        const max=Math.max(1,...selected.map(o=>o.value)),height=Math.max(160,selected.length*38+45);
+        card.querySelector('.visual-toolbar h3').textContent='Measles reported cases by country';
+        wrap.style.maxHeight='560px';wrap.style.overflow='auto';
+        wrap.innerHTML='<p>'+selected.length+' of '+rows.length+' reporting countries shown · '+displayDate(spec.reporting_cutoff)+'. Not shown in the top ten does not mean zero cases.</p><svg viewBox="0 0 940 '+height+'" style="width:100%;min-width:650px" role="img" aria-label="Selected countries, monthly measles cases">'+selected.map((o,i)=>'<g><title>'+safe(o.geography.name)+': '+fmt(o.value)+' reported cases; '+displayDate(o.reporting_period_end)+'</title><text x="5" y="'+(30+i*38)+'" fill="#143b2c" font-size="13">'+safe(o.geography.name)+'</text><rect x="270" y="'+(14+i*38)+'" width="'+(o.value/max*560)+'" height="23" fill="#16845f"/><text x="'+(280+o.value/max*560)+'" y="'+(30+i*38)+'" fill="#143b2c" font-size="13">'+fmt(o.value)+'</text></g>').join('')+'</svg>';
+      };controls.querySelector('select').onchange=draw;draw();
+    }
     const actions=document.createElement('div');actions.className='epi-controls';
     actions.innerHTML='<button type="button">Download PNG</button><button type="button">Copy citation</button>';
     card.append(actions);

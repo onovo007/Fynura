@@ -12,7 +12,7 @@
     return fetchBefore(input,options);
   };
   const esc=value=>safe(String(value??'Not stated'));
-  const label=value=>String(value).replaceAll('_',' ');
+  const label=value=>value==='reported_cholera_awd_cases'?'Reported cholera and acute watery diarrhoea cases':String(value).replaceAll('_',' ');
   const dates=m=>'<dl class="period-strip"><div><dt>Reporting period</dt><dd>'+esc(m.reporting_start?displayDate(m.reporting_start)+' – '+displayDate(m.reporting_cutoff):(m.threat==='measles'&&m.reporting_cutoff?new Date(m.reporting_cutoff+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}):'Through '+displayDate(m.reporting_cutoff)))+'</dd></div><div><dt>Reporting cutoff</dt><dd>'+esc(displayDate(m.reporting_cutoff))+'</dd></div><div><dt>Published</dt><dd>'+esc(displayDate(m.publication_date))+'</dd></div><div><dt>Retrieved</dt><dd>'+esc(m.retrieved_at?new Date(m.retrieved_at).toLocaleString():'Not stated')+'</dd></div></dl>';
   function controls(){
     if(document.querySelector('#workspace-filters'))return;
