@@ -3,7 +3,7 @@
 <text x="55" y="79.16" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="#16352c">FYNURA</text>
 <text x="55" y="126.68" font-family="Arial, sans-serif" font-size="29" font-weight="400" fill="#16352c">Traceable surveillance. Source-grounded research.</text>
 <text x="1320" y="74.32" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#16352c">PRODUCTION ARCHITECTURE</text>
-<text x="1320" y="108.32" font-family="Arial, sans-serif" font-size="21" font-weight="400" fill="#16352c">31 AUG 2026  |  Revision 00052</text>
+<text x="1320" y="108.32" font-family="Arial, sans-serif" font-size="21" font-weight="400" fill="#16352c">31 AUG 2026</text>
 <rect x="360" y="160" width="1175" height="770" rx="24" fill="#eaf3ef" stroke="#97b9a8" stroke-width="2"/>
 <text x="390" y="204.68" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#16352c">GOOGLE CLOUD</text>
 <text x="390" y="242.08" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#16352c">Cloud Run hosts API + frontend; managed services connect below.</text>

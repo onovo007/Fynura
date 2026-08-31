@@ -52,7 +52,7 @@ def arrow(x1,y1,x2,y2,color='#168664'):
 text(55,35,'FYNURA',48,bold=True)
 text(55,100,'Traceable surveillance. Source-grounded research.',29)
 text(1320,55,'PRODUCTION ARCHITECTURE',21,bold=True)
-text(1320,89,'31 AUG 2026  |  Revision 00052',21)
+text(1320,89,'31 AUG 2026',21)
 
 rect(360,160,1175,770,'#eaf3ef','#97b9a8',24)
 text(390,178,'GOOGLE CLOUD',29,bold=True)
