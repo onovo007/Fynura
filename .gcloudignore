@@ -10,3 +10,4 @@ tests
 tmp/
 .ruff_cache/
 Fynura_Submission_Package_*.zip
+.private-submission/

@@ -20,3 +20,4 @@ tmp/
 service-account*.json
 credentials*.json
 Fynura_Submission_Package_*.zip
+.private-submission/
