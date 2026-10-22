@@ -6,7 +6,7 @@
     'What public-health signals need attention now?',
     'Summarize the latest Ebola evidence by country.',
     'Explain a public-health concept.',
-    'Where should country programmes intensify surveillance and control?'
+    'For the latest Ebola evidence, where should country programmes intensify surveillance and control?'
   ];
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function answerMarkup(data) {
