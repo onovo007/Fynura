@@ -1,7 +1,7 @@
 (() => {
   const workspaces = {
     monitor: {title:'Monitor verified public-health signals',summary:'See current signals, country coverage and reporting dates in one place.',sections:['signals','threats','canonical-table','visuals','nigeria-availability']},
-    verify: {title:'Verify the evidence behind every claim',summary:'Inspect sources, provenance, reporting periods, harmonization rules and evidence limitations.',sections:['sources','harmonization']},
+    verify: {title:'Verify the evidence behind every claim',summary:'Inspect sources, provenance, reporting periods and evidence limitations.',sections:['sources']},
     detect: {title:'Review historical patterns and early signals',summary:'Examine descriptive history and eligible statistical screening without treating signals as forecasts.',sections:['historical-evidence']},
     advise: {title:'Ask Fynura',summary:'Ask a question, get a concise answer, and inspect the supporting sources.',sections:['ask']},
     learn: {title:'Understand methods, coverage and responsible use',summary:'Review system boundaries, source availability, methodology and reproducibility resources.',sections:['fynura-story','event-intelligence','trust']}
