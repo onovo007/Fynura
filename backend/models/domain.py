@@ -56,6 +56,18 @@ class Observation(BaseModel):
     raw_indicator: str | None = None
     raw_geography: str | None = None
     raw_case_definition: str | None = None
+    pathogen_or_variant: str | None = None
+    outbreak_id: str | None = None
+    status: Literal["suspected", "probable", "confirmed", "reported", "unknown"] | None = None
+    interval_type: Literal["incident", "cumulative", "point", "unknown"] = "unknown"
+    onset_date: date | None = None
+    document_checksum: str | None = None
+    document_page: int | None = Field(default=None, ge=1)
+    document_table: str | None = None
+    revision_id: str | None = None
+    supersedes_observation_id: str | None = None
+    qa_flags: list[str] = []
+    confidence_rationale: str | None = None
 
 
 class DerivedMetric(BaseModel):

@@ -1,0 +1,10 @@
+disease,indicator,value,unit,status,interval_type,period_start,period_end,geography,admin_level,geography_code,page,table,case_definition,supporting_excerpt,qa_flags
+cholera,suspected_cases,42,persons,suspected,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,7,Table 8,NCDC source-defined suspected case,Week 22 suspected cases,
+cholera,confirmed_cases,33,persons,confirmed,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,7,Table 8,Laboratory confirmed,Week 22 confirmed cases,
+cholera,reported_deaths,1,persons,reported,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,7,Table 8,NCDC reported death,Week 22 deaths,
+cholera,suspected_cases,637,persons,suspected,cumulative,2026-01-01,2026-05-31,Nigeria,country,NGA,7,Table 9,NCDC source-defined suspected case,2026 year-to-date suspected cases,provisional
+cholera,confirmed_cases,188,persons,confirmed,cumulative,2026-01-01,2026-05-31,Nigeria,country,NGA,7,Table 9,Laboratory confirmed,2026 year-to-date confirmed cases,provisional
+cholera,reported_deaths,5,persons,reported,cumulative,2026-01-01,2026-05-31,Nigeria,country,NGA,7,Table 9,NCDC reported death,2026 year-to-date deaths,provisional
+measles,suspected_cases,40,persons,suspected,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,8,Table 10,NCDC source-defined suspected case,Week 22 suspected cases,
+measles,confirmed_cases,0,persons,confirmed,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,8,Table 10,Laboratory confirmed,Week 22 confirmed cases,
+measles,reported_deaths,2,persons,reported,incident,2026-05-25,2026-05-31,Nigeria,country,NGA,8,Table 10,NCDC reported death,Week 22 deaths,

@@ -32,6 +32,7 @@ from backend.services.identity import (
     require_owner,
 )
 from backend.services.map_data import build_map_data
+from backend.services.nigeria import availability as nigeria_availability
 from backend.services.pipeline import Pipeline
 from backend.services.refresh import RefreshService
 from backend.services.science import science_answer
@@ -368,6 +369,12 @@ def threats():
 @app.get("/api/sources")
 def source_registry():
     return {"sources": sources(), "summary": network_summary()}
+
+
+@app.get("/api/countries/nigeria/availability")
+def nigeria_data_availability():
+    """Phase 1 status; does not imply that NCDC is an operational live feed."""
+    return nigeria_availability()
 
 
 @app.get("/api/intelligence")
