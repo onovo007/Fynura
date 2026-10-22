@@ -68,6 +68,44 @@ def test_canonical_scope_conflicts_and_no_false_zero():
     assert selected["conflicts"]
 
 
+def test_country_scoped_outbreak_keeps_verified_cross_border_signals_in_global_view():
+    drc = Geography(name="Democratic Republic of the Congo", level="country", iso3="COD",
+                    who_region="Africa")
+    kenya = Geography(name="Kenya", level="country", iso3="KEN", who_region="Africa")
+    nigeria = Geography(name="Nigeria", level="country", iso3="NGA", who_region="Africa")
+    package = assessment("ebola", [
+        observation("ebola", "confirmed_cases", 8728, drc),
+        observation("ebola", "confirmed_cases", 1, kenya),
+        observation("ebola", "preparedness_advisory", 1, nigeria).model_copy(update={
+            "unit": "signal",
+            "case_definition": "Official preparedness advisory; no confirmed Ebola case",
+        }),
+    ])
+    package.geography = drc
+
+    data = workspace([package], threat="ebola")
+
+    by_country = {(metric["geography"]["iso3"], metric["indicator"]): metric
+                  for metric in data["metrics"]}
+    assert ("COD", "confirmed_cases") in by_country
+    assert ("KEN", "confirmed_cases") in by_country
+    assert ("NGA", "preparedness_advisory") in by_country
+    assert ("NGA", "confirmed_cases") not in by_country
+
+
+def test_global_assessment_does_not_expand_to_all_country_cards_by_default():
+    global_geo = Geography(name="Global", level="global")
+    nigeria = Geography(name="Nigeria", level="country", iso3="NGA", who_region="Africa")
+    package = assessment("cholera", [
+        observation("cholera", "reported_cholera_awd_cases", 1000, global_geo),
+        observation("cholera", "reported_cholera_awd_cases", 100, nigeria),
+    ])
+
+    data = workspace([package], threat="cholera")
+
+    assert {metric["geography"]["name"] for metric in data["metrics"]} == {"Global"}
+
+
 def test_cookie_logout_revokes_access_record(monkeypatch):
     user = {"user_id": "logout-test", "country": "Nigeria", "iso2": "NG", "iso3": "NGA", "account_status": "active"}
     product_repo.save_user(user)

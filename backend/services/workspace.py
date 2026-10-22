@@ -39,8 +39,12 @@ def workspace(assessments, threat="all", region="Global", country="", period="")
             if key not in latest or str(sample.reporting_period_end) > str(latest[key][0].reporting_period_end):
                 latest[key] = (sample, selected, group)
         for sample, selected, g in latest.values():
-            # Global view prefers source-provided global totals, never sums country reports.
-            if not country and region == "Global" and sample.geography.name != a.geography.name:
+            # A genuinely global assessment already supplies the correct non-additive
+            # headline and should not expand into every contributing country by default.
+            # Country- or region-scoped assessments can contain separately verified
+            # cross-border observations, which remain distinct cards in the global view.
+            if (not country and region == "Global" and a.geography.level == "global"
+                    and sample.geography.name != a.geography.name):
                 continue
             primary = selected or sample
             all_candidates = [by_id[i] for i in g.candidate_observation_ids]
