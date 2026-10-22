@@ -4,16 +4,16 @@ import json
 import logging
 from datetime import UTC, datetime
 from functools import cached_property
-from uuid import uuid4
 from urllib.parse import urlparse
+from uuid import uuid4
 
 from google import genai
-from google.genai import types
 from google.adk.agents import LlmAgent
 from google.adk.models.google_llm import Gemini
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.tools.google_search_tool import GoogleSearchTool
+from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
 from backend.config import get_settings
@@ -65,6 +65,7 @@ class HealthSearch(GoogleSearchTool):
         llm_request.config.tools[-1].google_search.exclude_domains = [
             'facebook.com', 'instagram.com', 'tiktok.com', 'x.com', 'twitter.com',
             'reddit.com', 'blogspot.com', 'youtube.com', 'pinterest.com',
+            'medicalbrief.co.za', 'embracerelief.org',
         ]
 
 
@@ -174,9 +175,12 @@ def grounded_result(answer, metadata, model):
         return {"answer": "I could not verify supporting sources for this answer. Please try again, or ask about a specific aspect of the topic.",
                 "sources": [], "supports": [], "model": model,
                 "evidence_status": "Live source grounding unavailable", "suggestions": ""}
+    official_domains = ('who.int', 'cdc.gov', 'africacdc.org', 'ecdc.europa.eu',
+                        'paho.org', 'gov.uk', 'health.go.ke', 'health.go.ug',
+                        'ncdc.gov.ng', 'nih.gov', 'ncbi.nlm.nih.gov')
     for source in sources:
         publisher = (source['domain'] or source['title']).lower().removeprefix('www.')
-        official = publisher in {'who.int', 'cdc.gov', 'africacdc.org', 'ecdc.europa.eu', 'paho.org', 'gov.uk'}
+        official = any(publisher == domain or publisher.endswith('.' + domain) for domain in official_domains)
         source['kind'] = 'Health authority / government publisher' if official else 'Other research or news source; check original attribution'
     return {"answer": answer, "sources": sources, "supports": supports, "model": model,
             "linked_passages": len(supports),

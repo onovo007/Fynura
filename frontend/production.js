@@ -5,8 +5,8 @@
   const briefScript=document.createElement('script');briefScript.src='/static/briefs.js?v=2';document.head.append(briefScript);
   const historyStyle=document.createElement('link');historyStyle.rel='stylesheet';historyStyle.href='/static/history-polish.css?v=2';document.head.append(historyStyle);
   const heatmapScript=document.createElement('script');heatmapScript.src='/static/history-heatmap.js?v=1';heatmapScript.onload=()=>{const historyScript=document.createElement('script');historyScript.src='/static/history.js?v=2';document.head.append(historyScript)};document.head.append(heatmapScript);
-  const research=document.createElement('script');research.src='/static/research-chat.js?v=2';document.head.append(research);
-  for(const name of ['research-chat','early-signals']){const css=document.createElement('link');css.rel='stylesheet';css.href='/static/'+name+'.css?v=2';document.head.append(css)}
+  const research=document.createElement('script');research.src='/static/research-chat.js?v=3';document.head.append(research);
+  for(const name of ['research-chat','early-signals']){const css=document.createElement('link');css.rel='stylesheet';css.href='/static/'+name+'.css?v=3';document.head.append(css)}
   const early=document.createElement('script');early.src='/static/early-signals.js?v=2';document.head.append(early);
   const chartScript=document.createElement('script');chartScript.src='/static/trajectory.js?v=2';chartScript.onload=()=>{const shared=document.createElement('script');shared.src='/static/workspace.js?v=3';document.head.append(shared)};document.head.append(chartScript);
   const input=document.querySelector('#chat-q');input.placeholder='Ask a follow-up about any health threat…';

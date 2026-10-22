@@ -2,6 +2,12 @@
   if(typeof installCopilot==='function')installCopilot();
   let busy = false;
   const history = [];
+  const starterQuestions = [
+    'What public-health signals need attention now?',
+    'Summarize the latest Ebola evidence by country.',
+    'Explain a public-health concept.',
+    'Create a concise evidence brief.'
+  ];
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function answerMarkup(data) {
     let text = data.answer;
@@ -29,7 +35,10 @@
     const confidenceText=confidence && Number.isFinite(confidence.score)
       ? `${Math.round(confidence.score*100)}% · ${escape(confidence.level)}. Evidence-quality score, not a probability that a claim is true.`
       : escape(data.evidence_support || (data.sources.length ? 'Source-linked' : 'Live verification unavailable'));
-    section.innerHTML = `<header><small>${escape(data.mode || 'ASK FYNURA')}</small>${data.disciplines?`<p>${escape(data.disciplines)}</p>`:''}</header><div class="research-answer">${answerMarkup(data)}</div>${(data.metrics||[]).length?`<div class="research-metrics">${data.metrics.map(m=>`<div><strong>${escape(typeof m.value==='number'?m.value.toLocaleString():m.value)}</strong><span>${escape(m.label)} · ${escape(m.unit)}</span></div>`).join('')}</div>`:''}${data.declined?'':`<details class="answer-confidence"><summary>${confidence?'Evidence confidence':'Evidence support'} · ${confidence?escape(confidence.level):escape(data.evidence_support || (data.sources.length?'Source-linked':'Not live-verified'))}</summary><p>${confidenceText}</p><p>${escape(data.evidence_status||'Inspect source scope, dates and limitations.')}</p>${(confidence?.limitations||data.limitations||[]).map(s=>`<p>${escape(s)}</p>`).join('')}${data.retrieved_at?`<p>Checked ${escape(new Date(data.retrieved_at).toLocaleString())}</p>`:''}</details>`}<details class="research-sources"><summary>Sources (${data.sources.length})</summary>${data.sources.map(s=>`<p><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">[${s.id}] ${escape(s.title)}</a>${s.reporting_cutoff?` · Reporting through ${escape(s.reporting_cutoff)}`:''}</p>`).join('')}</details>`;
+    const official=data.sources.filter(s=>s.kind==='Health authority / government publisher');
+    const supporting=data.sources.filter(s=>s.kind!=='Health authority / government publisher');
+    const sourceRows=items=>items.map(s=>`<p><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">[${s.id}] ${escape(s.title)}</a>${s.reporting_cutoff?` · Reporting through ${escape(s.reporting_cutoff)}`:''}</p>`).join('');
+    section.innerHTML = `<header><small>${escape(data.mode || 'ASK FYNURA')}</small>${data.disciplines?`<p>${escape(data.disciplines)}</p>`:''}</header><div class="research-answer">${answerMarkup(data)}</div>${(data.metrics||[]).length?`<div class="research-metrics">${data.metrics.map(m=>`<div><strong>${escape(typeof m.value==='number'?m.value.toLocaleString():m.value)}</strong><span>${escape(m.label)} · ${escape(m.unit)}</span></div>`).join('')}</div>`:''}${data.declined?'':`<details class="answer-confidence"><summary>${confidence?'Evidence confidence':'Evidence support'} · ${confidence?escape(confidence.level):escape(data.evidence_support || (data.sources.length?'Source-linked':'Not live-verified'))}</summary><p>${confidenceText}</p><p>${escape(data.evidence_status||'Inspect source scope, dates and limitations.')}</p>${(confidence?.limitations||data.limitations||[]).map(s=>`<p>${escape(s)}</p>`).join('')}${data.retrieved_at?`<p>Checked ${escape(new Date(data.retrieved_at).toLocaleString())}</p>`:''}</details>`}<details class="research-sources"><summary>Sources (${data.sources.length})</summary>${official.length?`<b>Public-health authorities and government</b>${sourceRows(official)}`:''}${supporting.length?`<b>Supporting research or reporting</b>${sourceRows(supporting)}`:''}</details>`;
     if(data.surveillance){const facts=document.createElement('details');facts.innerHTML='<summary>Underlying surveillance evidence</summary>';facts.append(render(data.surveillance));section.append(facts);}
     if(data.brief && window.appendBrief){window.appendBrief(section,data.brief);}
     if(data.followups?.length){const actions=document.createElement('div');actions.className='research-followups';data.followups.forEach(q=>{const button=document.createElement('button');button.type='button';button.textContent=q;button.onclick=()=>researchAsk(q,null);actions.append(button);});section.append(actions);}
@@ -90,11 +99,12 @@
   form.addEventListener('click',e=>{if(e.target.closest('[aria-label="Send"]')){e.preventDefault();e.stopImmediatePropagation();researchAsk();}},true);
   form.addEventListener('keydown',e=>{if(e.target.id==='chat-q'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.stopImmediatePropagation();researchAsk();}},true);
   const context=document.createElement('label');context.className='research-context';context.innerHTML='<input type="checkbox" id="use-visual-context"> Include the selected visual in my question';form.before(context);
-  const reset=document.createElement('button');reset.type='button';reset.textContent='New conversation';reset.style.marginLeft='auto';context.append(reset);
-  reset.onclick=()=>{if(busy)return;history.length=0;document.querySelector('#messages').replaceChildren();document.querySelector('#chat-q').value='';document.querySelector('#use-visual-context').checked=false;setContext(null);};
-  const intro=document.querySelector('#ask .intro');intro.querySelector('h2').textContent='Ask Fynura. Explore the evidence.';
-  intro.querySelector('span').textContent='Live, source-grounded research across public health, with historical context, official guidance and transparent uncertainty. Please do not enter patient-identifying information.';
+  function welcome(){const messages=document.querySelector('#messages');messages.innerHTML=`<div class="msg welcome"><i>F</i><span><strong>What can I help you understand?</strong><small>Ask about an outbreak, evidence, methods or official guidance.</small><span class="starter-grid">${starterQuestions.map(q=>`<button type="button">${escape(q)}</button>`).join('')}</span></span></div>`;messages.querySelectorAll('.starter-grid button').forEach((b,i)=>b.onclick=()=>researchAsk(starterQuestions[i],null));}
+  const reset=document.createElement('button');reset.type='button';reset.textContent='New chat';reset.className='new-chat';reset.style.marginLeft='auto';context.append(reset);
+  reset.onclick=()=>{if(busy)return;history.length=0;welcome();document.querySelector('#chat-q').value='';document.querySelector('#use-visual-context').checked=false;setContext(null);document.querySelector('#chat-q').focus();};
+  const intro=document.querySelector('#ask .intro');intro.querySelector('h2').textContent='Ask Fynura';
+  intro.querySelector('span').textContent='Concise, source-grounded public-health answers with citations you can inspect.';
   document.querySelector('.chathead em').textContent='Live research';
-  const greeting=document.querySelector('#messages .msg span');if(greeting)greeting.innerHTML='What would you like to understand? Ask about current threats, historical outbreaks, affected populations or official responses. I will research sources and explain what is known and what remains uncertain.<small>General questions are independent of the selected chart.</small>';
+  const greeting=document.querySelector('#messages .msg span');if(greeting)welcome();
   document.querySelectorAll('.follow button').forEach((button,index)=>{const questions=['What are the current global public-health threats?','Which evidence supports your last answer?','What remains uncertain in your last answer?'];button.onclick=()=>researchAsk(questions[index],null);});
 })();
