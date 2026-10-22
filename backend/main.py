@@ -75,14 +75,15 @@ async def frontend_cache_policy(request: Request, call_next):
     if path in {"/static/index.html", "/static/admin.html"}:
         return RedirectResponse("/" if path.endswith("index.html") else "/admin", status_code=307)
     public_api = {"/api/auth/config", "/api/auth/session", "/api/auth/logout", "/api/auth/me", "/api/onboarding", "/api/countries", "/api/product/config"}
-    protected = path in {"/", "/admin", "/static/index.html", "/static/admin.html"} or (path.startswith("/api/") and path not in public_api)
+    workspace_routes = {"/monitor", "/verify", "/detect", "/advise", "/learn"}
+    protected = path in {"/", "/admin", "/static/index.html", "/static/admin.html"} or path in workspace_routes or (path.startswith("/api/") and path not in public_api)
     if settings.fynura_onboarding_required and protected and not active_session(request, product_repo):
-        if path in {"/", "/admin", "/static/index.html", "/static/admin.html"}:
+        if path in {"/", "/admin", "/static/index.html", "/static/admin.html"} or path in workspace_routes:
             return RedirectResponse("/welcome", status_code=307, headers={"Cache-Control": "no-store"})
         from fastapi.responses import JSONResponse
         return JSONResponse({"detail": "Fynura session expired. Please sign in again."}, status_code=401, headers={"Cache-Control": "no-store"})
     response = await call_next(request)
-    if request.url.path in {"/", "/welcome", "/admin"} or request.url.path.startswith("/api/auth/"):
+    if request.url.path in {"/", "/welcome", "/admin", *workspace_routes} or request.url.path.startswith("/api/auth/"):
         response.headers["Cache-Control"] = "no-store"
     elif request.url.path.startswith("/static/") and request.url.path.endswith((".js", ".css", ".html")):
         response.headers["Cache-Control"] = "no-cache"
@@ -91,6 +92,17 @@ async def frontend_cache_policy(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 def home(request: Request):
+    if settings.fynura_onboarding_required and not optional_identity(request):
+        return RedirectResponse("/welcome", status_code=307)
+    return FileResponse(ROOT / "frontend" / "index.html")
+
+
+@app.get("/monitor", include_in_schema=False)
+@app.get("/verify", include_in_schema=False)
+@app.get("/detect", include_in_schema=False)
+@app.get("/advise", include_in_schema=False)
+@app.get("/learn", include_in_schema=False)
+def workspace_home(request: Request):
     if settings.fynura_onboarding_required and not optional_identity(request):
         return RedirectResponse("/welcome", status_code=307)
     return FileResponse(ROOT / "frontend" / "index.html")

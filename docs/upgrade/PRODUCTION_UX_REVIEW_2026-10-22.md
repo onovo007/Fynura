@@ -4,6 +4,22 @@
 **Environment:** authenticated production application on Google Cloud Run  
 **Method:** section-by-section browser review, accessibility-tree inspection, rendered-layout measurement, interaction-state review, and supporting code/test inspection.
 
+## Five-workspace shell increment
+
+Following the browser review, the route-aware application shell was implemented as a parity-preserving adapter around the existing evidence components.
+
+- `/monitor` contains the global map, shared surveillance scope, verified metric cards, epidemiological table, threat trajectories and Nigeria availability.
+- `/verify` contains the source registry and harmonization rules.
+- `/detect` contains historical evidence and eligible early-signal review.
+- `/advise` contains Ask Fynura, evidence-linked answers, briefs and infographic generation.
+- `/learn` contains the product explanation, methodology and responsible-use boundaries.
+
+The top navigation uses the History API, supports browser back and forward navigation, retains query parameters, exposes the active workspace with `aria-current`, and focuses the workspace heading after a route transition. Direct workspace URLs use the same authentication gate and no-store cache policy as the existing application. Legacy section hashes are mapped to the closest workspace route.
+
+A persistent Ask Fynura launcher is available from Monitor, Verify, Detect and Learn. The existing evidence dialog remains globally available. Mobile navigation is horizontally scrollable, focus treatment is visible, and reduced-motion preferences are respected.
+
+This increment does not change canonical surveillance values, source selection, epidemiological calculations or Ask Fynura evidence resolution. It reorganizes proven components into task-oriented workspaces. Searchable country selection and deeper shared-context controls remain part of the next Monitor and Verify component migration.
+
 ## Review coverage
 
 The walkthrough covered:

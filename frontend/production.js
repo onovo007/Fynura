@@ -1,5 +1,7 @@
 /* Public analytics are derived from the same canonical snapshots as Ask and maps. */
 (() => {
+  const shellStyle=document.createElement('link');shellStyle.rel='stylesheet';shellStyle.href='/static/app-shell.css?v=1';document.head.append(shellStyle);
+  const shellScript=document.createElement('script');shellScript.src='/static/app-shell.js?v=1';shellScript.defer=true;document.head.append(shellScript);
   const briefScript=document.createElement('script');briefScript.src='/static/briefs.js?v=2';document.head.append(briefScript);
   const historyStyle=document.createElement('link');historyStyle.rel='stylesheet';historyStyle.href='/static/history-polish.css?v=2';document.head.append(historyStyle);
   const heatmapScript=document.createElement('script');heatmapScript.src='/static/history-heatmap.js?v=1';heatmapScript.onload=()=>{const historyScript=document.createElement('script');historyScript.src='/static/history.js?v=2';document.head.append(historyScript)};document.head.append(heatmapScript);

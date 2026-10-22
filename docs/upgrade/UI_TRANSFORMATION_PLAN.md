@@ -82,6 +82,8 @@ Existing files remain in place while their behavior is migrated behind adapters.
 
 ### Phase 2 — shell and shared state
 
+**Implementation status — 22 October 2026:** route-aware shell increment implemented. Direct authenticated routes, five top-level tabs, History API navigation, query preservation, legacy hash compatibility, route-specific component visibility, a persistent Ask Fynura launcher, keyboard focus transfer, responsive navigation and reduced-motion support are present. Existing analytical components are mounted through parity-preserving adapters. The richer contextual sidebar and request-cache extraction continue with the Monitor and Verify migration.
+
 - add direct authenticated workspace routes;
 - build top tabs, responsive sidebar, outlet, persistent Ask Fynura launcher, and evidence inspector;
 - create the context store, URL serialization, request cache, and workspace compatibility rules;
