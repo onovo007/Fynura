@@ -86,7 +86,11 @@ class Pipeline:
         groups = fuse_observations(observations)
         confidence = calculate_confidence(observations, groups)
         cases = sorted(
-            (o for o in observations if o.indicator == "confirmed_cases"),
+            (
+                o
+                for o in observations
+                if o.indicator == "confirmed_cases" and o.geography.iso3 == "COD"
+            ),
             key=lambda o: o.reporting_period_end,
         )
         latest, prior = cases[-1], cases[-2]
