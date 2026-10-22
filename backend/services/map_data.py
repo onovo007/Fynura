@@ -24,8 +24,12 @@ SUPPORTED_METRICS = {
     "ebola": {
         "signal": "confirmed_cases",
         "reported_cases": "confirmed_cases",
+        "suspected_cases": "suspected_cases",
         "deaths": "reported_deaths",
+        "probable_cases": "probable_cases",
+        "probable_deaths": "probable_deaths",
         "cfr": "crude_cfr",
+        "recovered_cases": "recovered_cases",
     },
 }
 

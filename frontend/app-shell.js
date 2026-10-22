@@ -4,7 +4,7 @@
     verify: {title:'Verify the evidence behind every claim',summary:'Inspect sources, provenance, reporting periods and evidence limitations.',sections:['sources']},
     detect: {title:'Review historical patterns and early signals',summary:'Examine descriptive history and eligible statistical screening without treating signals as forecasts.',sections:['historical-evidence']},
     advise: {title:'Ask Fynura',summary:'Ask a question, get a concise answer, and inspect the supporting sources.',sections:['ask']},
-    learn: {title:'Understand methods, coverage and responsible use',summary:'Review system boundaries, source availability, methodology and reproducibility resources.',sections:['fynura-story','event-intelligence','trust']}
+    learn: {title:'Prioritize surveillance review',summary:'Use verified activity, reporting recency and evidence gaps to focus closer review and open a source-grounded advisory.',sections:['priority-advisor','event-intelligence','trust']}
   };
   const aliases={signals:'monitor',visuals:'monitor',sources:'verify','historical-evidence':'detect',ask:'advise',trust:'learn'};
   const valid=value=>Object.prototype.hasOwnProperty.call(workspaces,value);

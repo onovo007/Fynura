@@ -90,6 +90,27 @@ def test_current_who_emergency_table_supersedes_old_country_totals():
     assert all(row.reporting_period_end.isoformat() == "2026-10-20" for row in total)
 
 
+def test_current_who_emergency_table_preserves_all_reported_metrics_and_zeros():
+    text = (
+        "WHO_ALERT_METRIC_ROW::18 October 2026::Democratic Republic of the Congo::468::9552::4602::-::-::48%::2550 "
+        "WHO_ALERT_METRIC_ROW::6 July 2026::France::-::1::0::0::0::-::1 "
+        "WHO_ALERT_METRIC_ROW::20 October 2026::Kenya::-::9::1::-::-::11%::- "
+        "WHO_ALERT_TOTAL_METRICS::468::9583::4605::1::1::48%::2569"
+    )
+    rows = WHOEbolaAdapter()._extract_alert_table(
+        [("https://www.who.int/emergencies/alert-and-response", text)],
+        "complete-alert-table-fixture",
+    )
+    values = {(row.geography.iso3, row.indicator): row.value for row in rows}
+    assert values[("COD", "suspected_cases")] == 468
+    assert values[("COD", "recovered_cases")] == 2550
+    assert values[("KEN", "crude_cfr")] == 11
+    assert values[("FRA", "reported_deaths")] == 0
+    assert values[("FRA", "probable_cases")] == 0
+    assert ("FRA", "crude_cfr") not in values
+    assert values[(None, "probable_deaths")] == 1
+
+
 def test_drc_trajectory_is_not_replaced_by_same_day_imported_case():
     rows = WHOEbolaAdapter().extract(
         [

@@ -5,6 +5,8 @@
   const briefScript=document.createElement('script');briefScript.src='/static/briefs.js?v=2';document.head.append(briefScript);
   const historyStyle=document.createElement('link');historyStyle.rel='stylesheet';historyStyle.href='/static/history-polish.css?v=3';document.head.append(historyStyle);
   const heatmapScript=document.createElement('script');heatmapScript.src='/static/history-heatmap.js?v=2';heatmapScript.onload=()=>{const historyScript=document.createElement('script');historyScript.src='/static/history.js?v=4';document.head.append(historyScript)};document.head.append(heatmapScript);
+  const priorityStyle=document.createElement('link');priorityStyle.rel='stylesheet';priorityStyle.href='/static/priorities.css?v=1';document.head.append(priorityStyle);
+  for(const name of ['ebola-metrics','priorities']){const script=document.createElement('script');script.src='/static/'+name+'.js?v=1';document.head.append(script)}
   const research=document.createElement('script');research.src='/static/research-chat.js?v=3';document.head.append(research);
   for(const name of ['research-chat','early-signals']){const css=document.createElement('link');css.rel='stylesheet';css.href='/static/'+name+'.css?v=3';document.head.append(css)}
   const early=document.createElement('script');early.src='/static/early-signals.js?v=2';document.head.append(early);

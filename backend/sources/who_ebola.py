@@ -55,16 +55,16 @@ class WHOEbolaAdapter:
                         cutoff = cells[0].removeprefix("Data as of ")
                         continue
                     country = cells[0].replace("*", "").replace("#", "").strip()
-                    if cutoff and country in {"Democratic Republic of the Congo", "Uganda", "France", "Kenya", "Nigeria"} and len(cells) >= 4:
+                    if cutoff and country in {"Democratic Republic of the Congo", "Uganda", "France", "Kenya", "Nigeria"} and len(cells) >= 8:
                         markers.append(
-                            "WHO_ALERT_ROW::" + "::".join(
-                                [cutoff, country, cells[2].replace(" ", ""), cells[3].replace(" ", "")]
+                            "WHO_ALERT_METRIC_ROW::" + "::".join(
+                                [cutoff, country] + [cell.replace(" ", "") for cell in cells[1:8]]
                             )
                         )
-                    if country == "Total" and len(cells) >= 4:
+                    if country == "Total" and len(cells) >= 8:
                         markers.append(
-                            "WHO_ALERT_TOTAL::" + "::".join(
-                                [cells[2].replace(" ", ""), cells[3].replace(" ", "")]
+                            "WHO_ALERT_TOTAL_METRICS::" + "::".join(
+                                [cell.replace(" ", "") for cell in cells[1:8]]
                             )
                         )
                 results.append((str(response.url), text + " " + " ".join(markers)))
@@ -202,14 +202,30 @@ class WHOEbolaAdapter:
             "Nigeria": ("NGA", "African Region"),
         }
         pattern = re.compile(
-            r"WHO_ALERT_ROW::(\d{1,2} \w+ 2026)::([^:]+)::([\d-]+)::([\d-]+)"
+            r"WHO_ALERT_METRIC_ROW::(\d{1,2} \w+ 2026)::([^:]+)::"
+            r"([\d,-]+)::([\d,-]+)::([\d,-]+)::([\d,-]+)::([\d,-]+)::([\d.%-]+)::([\d,-]+)"
         )
+        legacy = re.compile(
+            r"WHO_ALERT_ROW::(\d{1,2} \w+ 2026)::([^:]+)::([\d,-]+)::([\d,-]+)"
+        )
+        metric_fields = (
+            ("suspected_cases", "persons"),
+            ("confirmed_cases", "persons"),
+            ("reported_deaths", "persons"),
+            ("probable_cases", "persons"),
+            ("probable_deaths", "persons"),
+            ("crude_cfr", "percent"),
+            ("recovered_cases", "persons"),
+        )
+        def numeric(value: str) -> float | None:
+            cleaned = value.replace(",", "").replace("%", "")
+            return None if cleaned == "-" else float(cleaned)
         for url, text in documents:
             if "alert-and-response" not in url:
                 continue
             for match in pattern.finditer(text):
-                cutoff_text, name, cases_text, deaths_text = match.groups()
-                if name not in countries or cases_text == "-":
+                cutoff_text, name, *values = match.groups()
+                if name not in countries:
                     continue
                 iso3, region = countries[name]
                 common = self._country_common(
@@ -225,28 +241,43 @@ class WHOEbolaAdapter:
                     source_id="who_ebola_alert",
                     extraction_method="deterministic_who_emergency_table_parser",
                 )
-                rows.append(
-                    Observation(
-                        indicator="confirmed_cases",
-                        value=float(cases_text),
-                        unit="persons",
-                        supporting_excerpt=f"WHO emergency table reported {cases_text} confirmed cases in {name}.",
-                        **common,
-                    )
-                )
-                if deaths_text != "-":
+                for (indicator, unit), raw_value in zip(metric_fields, values, strict=True):
+                    value = numeric(raw_value)
+                    if value is None:
+                        continue
                     rows.append(
                         Observation(
-                            indicator="reported_deaths",
-                            value=float(deaths_text),
-                            unit="persons",
-                            supporting_excerpt=f"WHO emergency table reported {deaths_text} confirmed deaths in {name}.",
+                            indicator=indicator,
+                            value=value,
+                            unit=unit,
+                            supporting_excerpt=f"WHO emergency table reported {raw_value} for {indicator.replace('_', ' ')} in {name}.",
                             **common,
                         )
                     )
-            total_match = re.search(r"WHO_ALERT_TOTAL::([\d-]+)::([\d-]+)", text)
+            # Backward-compatible parsing for stored fixtures created before
+            # the complete seven-column WHO table marker was introduced.
+            if "WHO_ALERT_METRIC_ROW::" not in text:
+                for match in legacy.finditer(text):
+                    cutoff_text, name, cases_text, deaths_text = match.groups()
+                    if name not in countries or numeric(cases_text) is None:
+                        continue
+                    iso3, region = countries[name]
+                    common = self._country_common(
+                        name, iso3, date_text=cutoff_text,
+                        publication_date=datetime.now(UTC).date(), url=url,
+                        run_id=run_id, who_region=region,
+                    )
+                    common.update(source_id="who_ebola_alert", extraction_method="deterministic_who_emergency_table_parser")
+                    for indicator, raw_value in (("confirmed_cases", cases_text), ("reported_deaths", deaths_text)):
+                        value = numeric(raw_value)
+                        if value is not None:
+                            rows.append(Observation(indicator=indicator, value=value, unit="persons", supporting_excerpt=f"WHO emergency table reported {raw_value} for {indicator.replace('_', ' ')} in {name}.", **common))
+            total_match = re.search(
+                r"WHO_ALERT_TOTAL_METRICS::([\d,-]+)::([\d,-]+)::([\d,-]+)::"
+                r"([\d,-]+)::([\d,-]+)::([\d.%-]+)::([\d,-]+)", text
+            )
             if total_match:
-                cases_text, deaths_text = total_match.groups()
+                values = total_match.groups()
                 cutoffs = [
                     datetime.strptime(match.group(1), "%d %B %Y").date()
                     for match in pattern.finditer(text)
@@ -271,25 +302,34 @@ class WHOEbolaAdapter:
                     "status": "confirmed",
                     "interval_type": "cumulative",
                 }
-                rows.append(
-                    Observation(
-                        indicator="confirmed_cases",
-                        value=float(cases_text),
-                        unit="persons",
-                        supporting_excerpt=f"WHO emergency table reported a total of {cases_text} confirmed cases across affected countries with country-specific reporting cutoffs.",
-                        **common,
-                    )
-                )
-                if deaths_text != "-":
+                for (indicator, unit), raw_value in zip(metric_fields, values, strict=True):
+                    value = numeric(raw_value)
+                    if value is None:
+                        continue
                     rows.append(
                         Observation(
-                            indicator="reported_deaths",
-                            value=float(deaths_text),
-                            unit="persons",
-                            supporting_excerpt=f"WHO emergency table reported a total of {deaths_text} confirmed deaths across affected countries with country-specific reporting cutoffs.",
+                            indicator=indicator,
+                            value=value,
+                            unit=unit,
+                            supporting_excerpt=f"WHO emergency table reported a total {indicator.replace('_', ' ')} value of {raw_value} across affected countries with country-specific reporting cutoffs.",
                             **common,
                         )
                     )
+            elif (legacy_total := re.search(r"WHO_ALERT_TOTAL::([\d,-]+)::([\d,-]+)", text)):
+                values = legacy_total.groups()
+                cutoffs = [datetime.strptime(match.group(1), "%d %B %Y").date() for match in legacy.finditer(text)]
+                common = {
+                    "threat_id": "ebola", "geography": Geography(name="WHO affected-country total", level="multi_country", who_region="Global"),
+                    "reporting_period_end": max(cutoffs) if cutoffs else datetime.now(UTC).date(), "publication_date": datetime.now(UTC).date(),
+                    "retrieved_at": datetime.now(UTC), "source_id": "who_ebola_alert", "source_url": url,
+                    "source_type": "international_health_authority", "case_definition": "laboratory-confirmed Bundibugyo virus disease",
+                    "extraction_method": "deterministic_who_emergency_table_total_parser", "extraction_confidence": 0.99,
+                    "run_id": run_id, "status": "confirmed", "interval_type": "cumulative",
+                }
+                for indicator, raw_value in (("confirmed_cases", values[0]), ("reported_deaths", values[1])):
+                    value = numeric(raw_value)
+                    if value is not None:
+                        rows.append(Observation(indicator=indicator, value=value, unit="persons", supporting_excerpt=f"WHO emergency table reported a total {indicator.replace('_', ' ')} value of {raw_value} across affected countries with country-specific reporting cutoffs.", **common))
         return rows
 
     def _extract_regional_countries(self, documents, run_id: str) -> list[Observation]:
