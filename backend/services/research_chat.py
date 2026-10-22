@@ -65,7 +65,7 @@ class HealthSearch(GoogleSearchTool):
         llm_request.config.tools[-1].google_search.exclude_domains = [
             'facebook.com', 'instagram.com', 'tiktok.com', 'x.com', 'twitter.com',
             'reddit.com', 'blogspot.com', 'youtube.com', 'pinterest.com',
-            'medicalbrief.co.za', 'embracerelief.org',
+            'medicalbrief.co.za', 'embracerelief.org', 'study.com', 'rgare.com',
         ]
 
 
@@ -196,7 +196,7 @@ async def research_events(request, stored, mode="research", domain="Public healt
     model = VertexGemini(model=settings.fynura_chat_model)
     sessions = InMemorySessionService()
     session_id = uuid4().hex
-    scientific_instruction = ("\nFor this scientific question, first search for an authoritative methods source explaining the concept. Do not answer from recall alone unless no usable source is found. Explain important assumptions and avoid universal claims when results depend on study design. For experimental design, address ethics and distinguish randomizable interventions from exposures that cannot ethically be assigned.") if mode == 'knowledge' else ''
+    scientific_instruction = ("\nFor this scientific question, first search for an authoritative methods source explaining the concept. Do not answer from recall alone unless no usable source is found. Explain important assumptions and avoid universal claims when results depend on study design. For experimental design, address ethics and distinguish randomizable interventions from exposures that cannot ethically be assigned. For a definition or simple explanatory question, answer in one compact paragraph of 60-100 words with no headings or bullets. Prefer WHO, CDC, government and primary methods sources; do not pad a simple answer with extra sources.") if mode == 'knowledge' else ''
     agent = LlmAgent(name="fynura_research", model=model, instruction=INSTRUCTION + scientific_instruction,
                      tools=[HealthSearch()], generate_content_config=types.GenerateContentConfig(
                          max_output_tokens=5000,
