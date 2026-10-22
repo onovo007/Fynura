@@ -61,6 +61,25 @@ def test_who_parser_accepts_latest_drc_wording():
     assert latest.reporting_period_end.isoformat() == "2026-10-06"
 
 
+def test_current_who_emergency_table_supersedes_old_country_totals():
+    text = (
+        "WHO_ALERT_ROW::18 October 2026::Democratic Republic of the Congo::9552::4602 "
+        "WHO_ALERT_ROW::20 October 2026::Kenya::9::1 "
+        "WHO_ALERT_ROW::20 October 2026::Nigeria::1::-"
+    )
+    rows = WHOEbolaAdapter()._extract_alert_table(
+        [("https://www.who.int/emergencies/alert-and-response", text)],
+        "alert-table-fixture",
+    )
+    values = {(row.geography.iso3, row.indicator): row.value for row in rows}
+    assert values[("COD", "confirmed_cases")] == 9552
+    assert values[("KEN", "confirmed_cases")] == 9
+    assert values[("KEN", "reported_deaths")] == 1
+    assert values[("NGA", "confirmed_cases")] == 1
+    assert ("NGA", "reported_deaths") not in values
+    assert all(row.source_id == "who_ebola_alert" for row in rows)
+
+
 def test_drc_trajectory_is_not_replaced_by_same_day_imported_case():
     rows = WHOEbolaAdapter().extract(
         [

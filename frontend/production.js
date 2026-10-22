@@ -13,6 +13,15 @@
   const label=document.querySelector('label[for="chat-q"]');label.className='composer-label';label.textContent='Ask Fynura · type your follow-up below';
   const composerStyle=document.createElement('style');composerStyle.textContent='#chat-form{position:relative;padding-top:38px;background:#edf6ef!important;border-top:2px solid #16845f!important}#chat-form .composer-label{position:absolute;top:10px;left:20px;font-size:12px;font-weight:700;color:#12583f}#chat-form #chat-q{border:2px solid #68a98c!important;background:#fff!important;box-shadow:0 2px 8px #123b2010;min-height:60px;width:100%}#chat-form #chat-q:focus{outline:3px solid #b6dac5;outline-offset:2px}.history-calendar{border:1px solid #d1e0d5;border-radius:14px;padding:20px;margin:24px 0}.heatmap-key{font-size:12px;line-height:2}';document.head.append(composerStyle);
   const dateLabel = v => v ? new Date(v+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Not stated';
+  function renderLatestSnapshots(){
+    if(!intel.data?.ebola||!document.querySelector('.scanstate'))return;
+    const standard=[['measles','reported_measles_cases_global','WHO monthly surveillance'],['cholera','reported_cholera_awd_cases','WHO Weekly Epidemiological Record']].map(([id,indicator,source])=>{const a=intel.data[id],o=metric(a,indicator);return `<li><span><b>${safe(id[0].toUpperCase()+id.slice(1))}</b><small>${safe(a.geography.name)}</small></span><span><strong>${fmt(o.value)}</strong><small>Through ${displayDate(o.reporting_period_end)}</small></span><em>${safe(source)}</em></li>`});
+    const latest={};
+    intel.data.ebola.observations.filter(o=>o.indicator==='confirmed_cases'&&['COD','UGA','KEN','NGA'].includes(o.geography.iso3)).forEach(o=>{const current=latest[o.geography.iso3];if(!current||String(o.reporting_period_end)>String(current.reporting_period_end))latest[o.geography.iso3]=o});
+    const countries=['COD','UGA','KEN','NGA'].filter(code=>latest[code]).map(code=>{const o=latest[code];return `<li><span><b>${safe(o.geography.name)}</b><small>Ebola · confirmed</small></span><span><strong>${fmt(o.value)}</strong><small>Through ${displayDate(o.reporting_period_end)}</small></span><em>${safe(o.source_id==='who_ebola_alert'?'WHO emergency table':'WHO Disease Outbreak News')}</em></li>`}).join('');
+    document.querySelector('.scanstate').innerHTML=`<i>✓</i><h3>Latest verified evidence</h3><ul class="snapshot-list">${standard[0]}<li class="snapshot-group"><b>Ebola country reports</b><small>Country totals use their own reporting cutoffs and are not summed.</small></li>${countries}${standard[1]}</ul><small>Source-check time and epidemiological reporting cutoff are shown separately.</small>`;
+    document.querySelector('#last-scan').textContent='Verified snapshots loaded';
+  }
   async function sourceHealth(){
     const r=await fetch('/api/data-status');if(!r.ok)return;const data=await r.json();
     const pulse=document.querySelector('#pulse');
@@ -28,6 +37,7 @@
     panel.querySelector('input').oninput=render;render();
     panel.querySelector('#epi-csv').onclick=()=>{const fields=['threat','geography','cases','deaths','cfr','change','reporting_cutoff','source_url'];const csv=[fields,...rows.map(x=>fields.map(k=>x[k]??''))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='fynura-epidemiological-snapshot.csv';a.click();URL.revokeObjectURL(url)};
   }
-  window.addEventListener('fynura:intelligence',()=>{analytics().catch(()=>{});sourceHealth().catch(()=>{})});
+  window.addEventListener('fynura:intelligence',()=>{analytics().catch(()=>{});sourceHealth().catch(()=>{});setTimeout(renderLatestSnapshots,0)});
+  setTimeout(renderLatestSnapshots,1000);
   sourceHealth().catch(()=>{});if(Object.keys(intel.data).length)analytics().catch(()=>{});
 })();

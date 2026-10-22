@@ -20,6 +20,10 @@ A persistent Ask Fynura launcher is available from Monitor, Verify, Detect and L
 
 This increment does not change canonical surveillance values, source selection, epidemiological calculations or Ask Fynura evidence resolution. It reorganizes proven components into task-oriented workspaces. Searchable country selection and deeper shared-context controls remain part of the next Monitor and Verify component migration.
 
+## Same-day Ebola country correction
+
+The 6 October NCDC preparedness advisory was superseded by Nigeria's first imported confirmed case on 20 October. The Ebola adapter now combines the compatible Disease Outbreak News sequence with WHO's current emergency country table. Nigeria is therefore displayed as one confirmed case, and Kenya as nine confirmed cases, each with a 20 October cutoff. The latest-evidence panel lists separate Ebola country reports instead of presenting only the DRC headline. See `SOURCE_DIVERSIFICATION_2026-10-22.md` for the national and regional source roadmap.
+
 ## Review coverage
 
 The walkthrough covered:

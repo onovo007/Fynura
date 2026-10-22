@@ -82,7 +82,13 @@ class Pipeline:
         adapter = WHOEbolaAdapter()
         documents = await adapter.retrieve(get_settings().request_timeout_seconds)
         observations = adapter.extract(documents, run_id)
-        observations.extend(NCDCEbolaAdvisoryAdapter().extract_reviewed(run_id))
+        # Retain the 6 October NCDC preparedness statement only until a newer
+        # confirmed Nigeria observation supersedes it.
+        if not any(
+            o.indicator == "confirmed_cases" and o.geography.iso3 == "NGA"
+            for o in observations
+        ):
+            observations.extend(NCDCEbolaAdvisoryAdapter().extract_reviewed(run_id))
         groups = fuse_observations(observations)
         confidence = calculate_confidence(observations, groups)
         cases = sorted(
@@ -99,6 +105,7 @@ class Pipeline:
                 o
                 for o in observations
                 if o.indicator == indicator
+                and o.geography.iso3 == "COD"
                 and o.reporting_period_end == latest.reporting_period_end
             ),
             None,

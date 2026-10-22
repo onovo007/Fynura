@@ -14,6 +14,7 @@ REPORTS = [
     "2026-DON619",
 ]
 BASE = "https://www.who.int/emergencies/disease-outbreak-news/item/"
+ALERT_URL = "https://www.who.int/emergencies/alert-and-response"
 
 
 class WHOEbolaAdapter:
@@ -39,6 +40,32 @@ class WHOEbolaAdapter:
                     # compatible verified sequence. Extraction below still
                     # requires multiple DRC cutoffs.
                     continue
+            try:
+                response = await client.get(ALERT_URL)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
+                text = soup.get_text(" ", strip=True)
+                cutoff = None
+                markers = []
+                for row in soup.find_all("tr"):
+                    cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+                    if not cells:
+                        continue
+                    if cells[0].startswith("Data as of "):
+                        cutoff = cells[0].removeprefix("Data as of ")
+                        continue
+                    country = cells[0].replace("*", "").replace("#", "").strip()
+                    if cutoff and country in {"Democratic Republic of the Congo", "Uganda", "France", "Kenya", "Nigeria"} and len(cells) >= 4:
+                        markers.append(
+                            "WHO_ALERT_ROW::" + "::".join(
+                                [cutoff, country, cells[2].replace(" ", ""), cells[3].replace(" ", "")]
+                            )
+                        )
+                results.append((str(response.url), text + " " + " ".join(markers)))
+            except httpx.HTTPError:
+                # The current table augments, but does not invalidate, the
+                # compatible Disease Outbreak News sequence.
+                pass
         if len(results) < 2:
             raise ValueError("Too few WHO Ebola reports were retrievable for validation")
         return results
@@ -144,14 +171,73 @@ class WHOEbolaAdapter:
                     )
                 )
         observations.extend(self._extract_regional_countries(documents, run_id))
+        observations.extend(self._extract_alert_table(documents, run_id))
         if (
-            len({o.reporting_period_end for o in observations if o.indicator == "confirmed_cases"})
+            len({
+                o.reporting_period_end
+                for o in observations
+                if o.indicator == "confirmed_cases" and o.geography.iso3 == "COD"
+            })
             < 2
         ):
             raise ValueError(
                 "Sequential WHO Ebola reports were not extracted; no trajectory was fabricated"
             )
         return observations
+
+    def _extract_alert_table(self, documents, run_id: str) -> list[Observation]:
+        """Extract current country totals from WHO's official emergency table."""
+        rows: list[Observation] = []
+        countries = {
+            "Democratic Republic of the Congo": ("COD", "African Region"),
+            "Uganda": ("UGA", "African Region"),
+            "France": ("FRA", "European Region"),
+            "Kenya": ("KEN", "African Region"),
+            "Nigeria": ("NGA", "African Region"),
+        }
+        pattern = re.compile(
+            r"WHO_ALERT_ROW::(\d{1,2} \w+ 2026)::([^:]+)::([\d-]+)::([\d-]+)"
+        )
+        for url, text in documents:
+            if "alert-and-response" not in url:
+                continue
+            for match in pattern.finditer(text):
+                cutoff_text, name, cases_text, deaths_text = match.groups()
+                if name not in countries or cases_text == "-":
+                    continue
+                iso3, region = countries[name]
+                common = self._country_common(
+                    name,
+                    iso3,
+                    date_text=cutoff_text,
+                    publication_date=datetime.now(UTC).date(),
+                    url=url,
+                    run_id=run_id,
+                )
+                common.update(
+                    source_id="who_ebola_alert",
+                    extraction_method="deterministic_who_emergency_table_parser",
+                )
+                rows.append(
+                    Observation(
+                        indicator="confirmed_cases",
+                        value=float(cases_text),
+                        unit="persons",
+                        supporting_excerpt=f"WHO emergency table reported {cases_text} confirmed cases in {name}.",
+                        **common,
+                    )
+                )
+                if deaths_text != "-":
+                    rows.append(
+                        Observation(
+                            indicator="reported_deaths",
+                            value=float(deaths_text),
+                            unit="persons",
+                            supporting_excerpt=f"WHO emergency table reported {deaths_text} confirmed deaths in {name}.",
+                            **common,
+                        )
+                    )
+        return rows
 
     def _extract_regional_countries(self, documents, run_id: str) -> list[Observation]:
         """Extract explicit country totals that are reported outside the DRC headline."""
