@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 import httpx
 from bs4 import BeautifulSoup
 
-from backend.models.domain import Observation
+from backend.models.domain import Geography, Observation
 from backend.services.geography import normalize_country
 
 REPORTS = [
@@ -59,6 +59,12 @@ class WHOEbolaAdapter:
                         markers.append(
                             "WHO_ALERT_ROW::" + "::".join(
                                 [cutoff, country, cells[2].replace(" ", ""), cells[3].replace(" ", "")]
+                            )
+                        )
+                    if country == "Total" and len(cells) >= 4:
+                        markers.append(
+                            "WHO_ALERT_TOTAL::" + "::".join(
+                                [cells[2].replace(" ", ""), cells[3].replace(" ", "")]
                             )
                         )
                 results.append((str(response.url), text + " " + " ".join(markers)))
@@ -235,6 +241,52 @@ class WHOEbolaAdapter:
                             value=float(deaths_text),
                             unit="persons",
                             supporting_excerpt=f"WHO emergency table reported {deaths_text} confirmed deaths in {name}.",
+                            **common,
+                        )
+                    )
+            total_match = re.search(r"WHO_ALERT_TOTAL::([\d-]+)::([\d-]+)", text)
+            if total_match:
+                cases_text, deaths_text = total_match.groups()
+                cutoffs = [
+                    datetime.strptime(match.group(1), "%d %B %Y").date()
+                    for match in pattern.finditer(text)
+                ]
+                common = {
+                    "threat_id": "ebola",
+                    "geography": Geography(
+                        name="WHO affected-country total",
+                        level="multi_country",
+                        who_region="Global",
+                    ),
+                    "reporting_period_end": max(cutoffs) if cutoffs else datetime.now(UTC).date(),
+                    "publication_date": datetime.now(UTC).date(),
+                    "retrieved_at": datetime.now(UTC),
+                    "source_id": "who_ebola_alert",
+                    "source_url": url,
+                    "source_type": "international_health_authority",
+                    "case_definition": "laboratory-confirmed Bundibugyo virus disease",
+                    "extraction_method": "deterministic_who_emergency_table_total_parser",
+                    "extraction_confidence": 0.99,
+                    "run_id": run_id,
+                    "status": "confirmed",
+                    "interval_type": "cumulative",
+                }
+                rows.append(
+                    Observation(
+                        indicator="confirmed_cases",
+                        value=float(cases_text),
+                        unit="persons",
+                        supporting_excerpt=f"WHO emergency table reported a total of {cases_text} confirmed cases across affected countries with country-specific reporting cutoffs.",
+                        **common,
+                    )
+                )
+                if deaths_text != "-":
+                    rows.append(
+                        Observation(
+                            indicator="reported_deaths",
+                            value=float(deaths_text),
+                            unit="persons",
+                            supporting_excerpt=f"WHO emergency table reported a total of {deaths_text} confirmed deaths across affected countries with country-specific reporting cutoffs.",
                             **common,
                         )
                     )

@@ -14,6 +14,13 @@ def threat_overview(assessments):
         selected = {g.selected_observation_id for g in fuse_observations(item.observations)}
         rows = [o for o in item.observations if o.observation_id in selected and o.indicator == indicators[threat]
                 and o.geography.name == item.geography.name]
+        if threat == 'ebola':
+            table_totals = [o for o in item.observations if o.observation_id in selected
+                            and o.indicator == 'confirmed_cases'
+                            and o.geography.level == 'multi_country'
+                            and o.source_id == 'who_ebola_alert']
+            if table_totals:
+                rows = table_totals
         if not rows:
             missing.append(threat.title())
             continue

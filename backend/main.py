@@ -686,6 +686,13 @@ def answer_question(request: AskRequest):
         return AskResponse(answer=f'No verified evidence is currently available for {threat_id} in {requested_geography}.', evidence_ids=[], declined=True, subject={'disease': threat_id, 'geography': requested_geography})
     if not geographic_rows:
         scoped_rows = [o for o in item.observations if o.geography.name == item.geography.name] or item.observations
+        if threat_id == "ebola" and requested_geography == "Global":
+            table_total_rows = [
+                o for o in item.observations
+                if o.geography.level == "multi_country" and o.source_id == "who_ebola_alert"
+            ]
+            if table_total_rows:
+                scoped_rows = table_total_rows
     latest = max(
         scoped_rows,
         key=lambda o: o.reporting_period_end or o.event_date or o.retrieved_at.date(),
@@ -713,6 +720,10 @@ def answer_question(request: AskRequest):
         ),
     }
     label, geography, dataset = names[threat_id]
+    if threat_id == "ebola" and scoped_rows and scoped_rows[0].geography.level == "multi_country":
+        label = "WHO Bundibugyo virus disease affected-country table"
+        geography = "WHO affected countries"
+        dataset = "WHO emergency alert and response table"
     if geographic_rows:
         geography = geographic_rows[0].geography.name
         label = f"{threat_id.title()} surveillance in {geography}"

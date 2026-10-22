@@ -66,7 +66,8 @@ def test_current_who_emergency_table_supersedes_old_country_totals():
         "WHO_ALERT_ROW::18 October 2026::Democratic Republic of the Congo::9552::4602 "
         "WHO_ALERT_ROW::20 October 2026::Kenya::9::1 "
         "WHO_ALERT_ROW::20 October 2026::Nigeria::1::- "
-        "WHO_ALERT_ROW::6 July 2026::France::1::-"
+        "WHO_ALERT_ROW::6 July 2026::France::1::- "
+        "WHO_ALERT_TOTAL::9583::4605"
     )
     rows = WHOEbolaAdapter()._extract_alert_table(
         [("https://www.who.int/emergencies/alert-and-response", text)],
@@ -81,6 +82,12 @@ def test_current_who_emergency_table_supersedes_old_country_totals():
     assert france.geography.who_region == "Europe"
     assert ("NGA", "reported_deaths") not in values
     assert all(row.source_id == "who_ebola_alert" for row in rows)
+    total = [row for row in rows if row.geography.level == "multi_country"]
+    assert {(row.indicator, row.value) for row in total} == {
+        ("confirmed_cases", 9583),
+        ("reported_deaths", 4605),
+    }
+    assert all(row.reporting_period_end.isoformat() == "2026-10-20" for row in total)
 
 
 def test_drc_trajectory_is_not_replaced_by_same_day_imported_case():
