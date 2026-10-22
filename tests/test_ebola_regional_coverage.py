@@ -65,7 +65,8 @@ def test_current_who_emergency_table_supersedes_old_country_totals():
     text = (
         "WHO_ALERT_ROW::18 October 2026::Democratic Republic of the Congo::9552::4602 "
         "WHO_ALERT_ROW::20 October 2026::Kenya::9::1 "
-        "WHO_ALERT_ROW::20 October 2026::Nigeria::1::-"
+        "WHO_ALERT_ROW::20 October 2026::Nigeria::1::- "
+        "WHO_ALERT_ROW::6 July 2026::France::1::-"
     )
     rows = WHOEbolaAdapter()._extract_alert_table(
         [("https://www.who.int/emergencies/alert-and-response", text)],
@@ -76,6 +77,8 @@ def test_current_who_emergency_table_supersedes_old_country_totals():
     assert values[("KEN", "confirmed_cases")] == 9
     assert values[("KEN", "reported_deaths")] == 1
     assert values[("NGA", "confirmed_cases")] == 1
+    france = next(row for row in rows if row.geography.iso3 == "FRA")
+    assert france.geography.who_region == "Europe"
     assert ("NGA", "reported_deaths") not in values
     assert all(row.source_id == "who_ebola_alert" for row in rows)
 
@@ -160,3 +163,14 @@ def test_africa_signal_map_distinguishes_confirmed_activity_and_nigeria_advisory
 
     cases = build_map_data([item], threat="ebola", region="Africa", metric="reported_cases")
     assert {country["iso3"] for country in cases["countries"]} == {"KEN", "UGA"}
+
+
+def test_map_corrects_stale_france_region_before_filtering():
+    from tests.test_map_data import assessment, observation
+
+    france = Geography(name="France", level="country", iso3="FRA", who_region="Africa", latitude=46, longitude=2)
+    item = assessment("ebola", [observation("ebola", "confirmed_cases", 1, france)])
+
+    assert build_map_data([item], threat="ebola", region="Africa", metric="reported_cases")["countries"] == []
+    europe = build_map_data([item], threat="ebola", region="Europe", metric="reported_cases")
+    assert europe["countries"][0]["who_region"] == "Europe"

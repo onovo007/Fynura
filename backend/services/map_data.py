@@ -1,5 +1,6 @@
 from backend.evidence import fuse_observations
 from backend.models.domain import Assessment, Observation
+from backend.services.geography import canonical_who_region
 
 DEFAULT_INDICATORS = {
     "measles": "reported_measles_cases",
@@ -83,7 +84,7 @@ def build_map_data(
             ]
         )
         if region != "Global":
-            rows = [row for row in rows if row.geography.who_region == region]
+            rows = [row for row in rows if canonical_who_region(row.geography.iso3, row.geography.who_region) == region]
         represented = {row.geography.iso3 or row.geography.name for row in rows}
         cutoff = max((row.reporting_period_end for row in rows if row.reporting_period_end), default=None)
         coverage[disease] = {
@@ -94,6 +95,7 @@ def build_map_data(
         }
         for row in rows:
             geo = row.geography
+            who_region = canonical_who_region(geo.iso3, geo.who_region)
             key = geo.iso3 or geo.code or geo.name
             signal = {
                 "disease": disease,
@@ -101,7 +103,7 @@ def build_map_data(
                 "source_country_name": geo.source_name or geo.name,
                 "iso2": geo.iso2,
                 "iso3": geo.iso3 or geo.code,
-                "who_region": geo.who_region,
+                "who_region": who_region,
                 "latitude": geo.latitude,
                 "longitude": geo.longitude,
                 "indicator": row.indicator,
@@ -131,7 +133,7 @@ def build_map_data(
                     "country": geo.name,
                     "iso2": geo.iso2,
                     "iso3": geo.iso3 or geo.code,
-                    "who_region": geo.who_region,
+                    "who_region": who_region,
                     "latitude": geo.latitude,
                     "longitude": geo.longitude,
                     "signals": [],

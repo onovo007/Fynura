@@ -73,6 +73,21 @@ OVERRIDES = {
 
 ISO3_OVERRIDES = {"GBR": OVERRIDES["united kingdom of great britain and northern ireland"]}
 
+# Prefer the country's canonical WHO region when a source row carries a stale or
+# inherited region label. This also protects already-stored observations until
+# the next source refresh replaces them.
+ISO3_WHO_REGIONS = {
+    "COD": "Africa",
+    "FRA": "Europe",
+    "KEN": "Africa",
+    "NGA": "Africa",
+    "UGA": "Africa",
+}
+
+
+def canonical_who_region(iso3: str | None, supplied: str | None) -> str | None:
+    return ISO3_WHO_REGIONS.get((iso3 or "").upper(), WHO_REGIONS.get(supplied or "", supplied))
+
 
 def _key(value: str) -> str:
     plain = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
@@ -103,7 +118,7 @@ def normalize_country(source_name: str, iso3: str | None = None, who_region: str
             code=override["iso3"],
             iso2=override["iso2"],
             iso3=override["iso3"],
-            who_region=WHO_REGIONS.get(who_region or "", who_region),
+            who_region=canonical_who_region(override["iso3"], who_region),
             latitude=override["latitude"],
             longitude=override["longitude"],
         )
@@ -119,7 +134,7 @@ def normalize_country(source_name: str, iso3: str | None = None, who_region: str
             level="country",
             code=iso3,
             iso3=iso3,
-            who_region=WHO_REGIONS.get(who_region or "", who_region),
+            who_region=canonical_who_region(iso3, who_region),
         )
     iso = info.get("ISO") or {}
     latlng = info.get("latlng") or []
@@ -131,7 +146,7 @@ def normalize_country(source_name: str, iso3: str | None = None, who_region: str
         code=iso.get("alpha3") or iso3,
         iso2=iso.get("alpha2"),
         iso3=iso.get("alpha3") or iso3,
-        who_region=WHO_REGIONS.get(who_region or "", who_region),
+        who_region=canonical_who_region(iso.get("alpha3") or iso3, who_region),
         latitude=float(latlng[0]) if len(latlng) == 2 else None,
         longitude=float(latlng[1]) if len(latlng) == 2 else None,
     )

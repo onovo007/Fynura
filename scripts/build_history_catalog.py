@@ -2,6 +2,7 @@
 import gzip
 import hashlib
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -39,6 +40,15 @@ def main():
           for code, points in sorted(measles["countries"].items())]
     response, digest = retrieve(CDC_EBOLA)
     outbreaks, skipped = ebola_chronology(response.text, digest)
+    grouped_outbreaks = {}
+    for point in outbreaks:
+        geography = re.sub(r"\s*\(DRC\)\s*$", "", point["geography"]).strip()
+        code = "OUTBREAK-" + re.sub(r"[^A-Z0-9]+", "-", geography.upper()).strip("-")
+        grouped_outbreaks.setdefault(code, {"code": code, "name": geography, "points": []})["points"].append(point)
+    ebola_countries = [
+        {"code": "ALL", "name": "All reported outbreak locations", "points": outbreaks},
+        *sorted(grouped_outbreaks.values(), key=lambda item: item["name"]),
+    ]
     response, digest = retrieve(WHO_CHOLERA + "?$filter=TimeDim%20ge%202010")
     payload = response.json()
     if payload.get("@odata.nextLink"):
@@ -52,7 +62,7 @@ def main():
             "source_url": WHO_CHOLERA, "unit": "reported cases", "countries": cc,
             "limitations": "Annual reported cholera totals. Not directly comparable to partial-year cholera and acute watery diarrhoea reports. Missing years are not zero. Not a monthly early-warning series."},
         "ebola": {"title": "Ebola historical outbreak comparison", "frequency": "outbreak", "source": "CDC",
-            "source_url": CDC_EBOLA, "unit": "reported cases per outbreak", "countries": [{"code": "ALL", "name": "Reported outbreak locations", "points": outbreaks}],
+            "source_url": CDC_EBOLA, "unit": "reported cases per outbreak", "countries": ebola_countries,
             "skipped_entries": skipped,
             "limitations": "Separate outbreak totals grouped by CDC chronology year, not annual incidence. Some outbreaks span multiple years. Species, geography and case definitions differ; no connecting trend or growth calculation. Entries without an unambiguous case total are omitted."}}
     for data in datasets.values():

@@ -11,6 +11,8 @@ def test_packaged_history_has_real_coverage_and_keeps_frequencies_separate():
     assert meta['measles']['first'] == '2012-01'
     assert meta['cholera']['frequency'] == 'annual'
     assert meta['ebola']['frequency'] == 'outbreak'
+    assert len(meta['ebola']['countries']) > 2
+    assert any(country['name'] == 'Uganda' for country in meta['ebola']['countries'])
     rows = historical_series('measles', 'USA', 2019, 2019)['points']
     assert len(rows) == 12
     assert all(p['evidence_id'] for p in rows)

@@ -2,15 +2,16 @@
 from urllib.parse import urlparse
 
 from backend.evidence import fuse_observations
+from backend.services.geography import canonical_who_region
 
 
 def workspace(assessments, threat="all", region="Global", country="", period=""):
     pool = [o for a in assessments if threat == "all" or a.threat_id == threat for o in a.observations]
     country_options = {o.geography.iso3: {"code": o.geography.iso3, "name": o.geography.name}
                        for o in pool if o.geography.iso3 and o.geography.level == "country"
-                       and (region == "Global" or o.geography.who_region == region)}
+                       and (region == "Global" or canonical_who_region(o.geography.iso3, o.geography.who_region) == region)}
     schema = {"countries": sorted(country_options.values(), key=lambda c: c["name"]),
-              "regions": sorted({o.geography.who_region for o in pool if o.geography.who_region}),
+              "regions": sorted({canonical_who_region(o.geography.iso3, o.geography.who_region) for o in pool if canonical_who_region(o.geography.iso3, o.geography.who_region)}),
               "periods": sorted({str(o.reporting_period_end) for o in pool if o.reporting_period_end}, reverse=True),
               "available_dimensions": [d for d, exists in (
                   ("country", bool(country_options)), ("who_region", any(o.geography.who_region for o in pool)),
@@ -21,7 +22,7 @@ def workspace(assessments, threat="all", region="Global", country="", period="")
             continue
         rows = [o for o in a.observations
                 if (not country or o.geography.iso3 == country)
-                and (region == "Global" or o.geography.who_region == region)
+                and (region == "Global" or canonical_who_region(o.geography.iso3, o.geography.who_region) == region)
                 and (not period or str(o.reporting_period_end) == period)]
         groups = fuse_observations(rows)
         by_id = {o.observation_id: o for o in rows}
@@ -49,7 +50,9 @@ def workspace(assessments, threat="all", region="Global", country="", period="")
             primary = selected or sample
             all_candidates = [by_id[i] for i in g.candidate_observation_ids]
             sources = sorted({urlparse(str(o.source_url)).hostname for o in all_candidates})
-            output.append({"threat": a.threat_id, "geography": sample.geography.model_dump(),
+            geography = sample.geography.model_dump()
+            geography["who_region"] = canonical_who_region(sample.geography.iso3, sample.geography.who_region)
+            output.append({"threat": a.threat_id, "geography": geography,
                            "indicator": sample.indicator, "value": selected.value if selected else None,
                            "unit": sample.unit, "case_definition": sample.case_definition,
                            "reporting_start": sample.reporting_period_start,

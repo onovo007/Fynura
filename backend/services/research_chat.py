@@ -126,6 +126,13 @@ Explain rises/declines using documented drivers, and label plausible hypotheses
 as hypotheses. Reporting delays or testing changes can affect observed patterns.
 Attribute public-health control guidance to the relevant authority and separate
 general guidance from actions documented in the outbreak. No individual diagnosis.
+For an operational advisory, synthesize only supported actions under four compact
+headings: Priority geographies and populations; Surveillance actions; Control
+actions; Data gaps and escalation triggers. Tie every priority to dated evidence
+or official guidance. Do not infer importation risk from proximity or case totals.
+Mention mobility, aviation, migration or displacement only when a named, dated
+dataset is actually retrieved, and distinguish passenger movement, aircraft
+movement, migrant stock and displacement because they are not interchangeable.
 
 The request includes today's UTC date. Never call a report current merely because
 it was retrieved today. Say 'reported through [date]' and mention material lags.

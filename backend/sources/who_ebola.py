@@ -213,6 +213,7 @@ class WHOEbolaAdapter:
                     publication_date=datetime.now(UTC).date(),
                     url=url,
                     run_id=run_id,
+                    who_region=region,
                 )
                 common.update(
                     source_id="who_ebola_alert",
@@ -306,10 +307,11 @@ class WHOEbolaAdapter:
         publication_date,
         url: str,
         run_id: str,
+        who_region: str = "African Region",
     ) -> dict:
         return {
             "threat_id": "ebola",
-            "geography": normalize_country(name, iso3, "African Region"),
+            "geography": normalize_country(name, iso3, who_region),
             "reporting_period_end": datetime.strptime(date_text, "%d %B %Y").date(),
             "publication_date": publication_date,
             "retrieved_at": datetime.now(UTC),
