@@ -1,0 +1,7 @@
+[
+  {"iso3":"COD","countryName":"Democratic Republic of the Congo","locationName":"North Kivu","locationCode":"COD-NK","adminLevel":"admin 1","assessmentDate":"2026-09-30","idpIndividuals":1200,"round":"fixture-1"},
+  {"iso3":"KEN","countryName":"Kenya","locationName":"Kenya","locationCode":"KEN","adminLevel":"country","assessmentDate":"2026-09-30","idpIndividuals":300,"round":"fixture-1"},
+  {"iso3":"NGA","countryName":"Nigeria","locationName":"Borno","locationCode":"NGA-BO","adminLevel":"admin 1","assessmentDate":"2026-09-30","idpIndividuals":800,"round":"fixture-1"},
+  {"iso3":"UGA","countryName":"Uganda","locationName":"Uganda","locationCode":"UGA","adminLevel":"country","assessmentDate":"2026-09-30","idpIndividuals":400,"round":"fixture-1"},
+  {"iso3":"FRA","countryName":"France","locationName":"France","locationCode":"FRA","adminLevel":"country","assessmentDate":"2026-09-30","idpIndividuals":10,"round":"fixture-1"}
+]

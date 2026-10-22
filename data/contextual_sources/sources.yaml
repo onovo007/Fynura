@@ -1,0 +1,29 @@
+sources:
+  - source_id: iom_dtm_v3
+    display_name: IOM Displacement Tracking Matrix API v3
+    context_types: [displacement_stock, returnee_stock]
+    pilot_countries: [COD, KEN, NGA, UGA]
+    geographic_resolution: [country, admin1, admin2]
+    temporal_resolution: assessment_round
+    licence_id: iom-dtm-public-terms-2026-10
+    integration_status: adapter_fixture_validation
+    validation_status: fixture_validated
+    operational: false
+    public: false
+    feature_flag: FYNURA_CONTEXTUAL_DATA_ENABLED
+    credential_secret: iom-dtm-v3-subscription-key
+    intended_use: Context for population displacement and humanitarian surveillance planning; never proof of transmission.
+  - source_id: undesa_migrant_stock_2024
+    display_name: UN DESA International Migrant Stock 2024
+    context_types: [migrant_stock]
+    pilot_countries: [COD, KEN, NGA, UGA]
+    geographic_resolution: [country]
+    temporal_resolution: structural_estimate
+    licence_id: undesa-ims-2024-review-required
+    integration_status: reviewed_extract_pending
+    validation_status: schema_validated
+    operational: false
+    public: false
+    feature_flag: FYNURA_CONTEXTUAL_DATA_ENABLED
+    intended_use: Long-run structural population context; never current movement.
+

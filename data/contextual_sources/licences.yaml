@@ -1,0 +1,24 @@
+licences:
+  - licence_id: iom-dtm-public-terms-2026-10
+    source_id: iom_dtm_v3
+    status: registration_required
+    permitted_uses: [internal_validation, aggregated_analysis_with_attribution]
+    prohibited_uses: [reidentification, representation_as_disease_transmission, republication_of_restricted_material]
+    attribution_required: true
+    attribution_template: "International Organization for Migration (IOM), [month year], DTM [product]. IOM, [place]."
+    terms_url: https://dtm.iom.int/terms-conditions-use-and-privacy-policy-dtm-website-and-information-products
+    reviewed_on: 2026-10-22
+    public_display_allowed: false
+    derived_outputs_allowed: true
+  - licence_id: undesa-ims-2024-review-required
+    source_id: undesa_migrant_stock_2024
+    status: pending_legal_review
+    permitted_uses: [internal_validation, source_attributed_research]
+    prohibited_uses: [representation_as_current_movement, public_display_before_dataset_licence_review]
+    attribution_required: true
+    attribution_template: "United Nations DESA Population Division (2024), International Migrant Stock 2024."
+    terms_url: https://www.un.org/development/desa/pd/content/International-migrant-stock
+    reviewed_on: 2026-10-22
+    public_display_allowed: false
+    derived_outputs_allowed: false
+

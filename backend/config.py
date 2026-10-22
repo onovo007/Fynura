@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     fynura_auth_domain: str = "fynura-public-health.firebaseapp.com"
     fynura_session_days: int = 5
     request_timeout_seconds: float = 20.0
+    fynura_contextual_data_enabled: bool = False
+    iom_dtm_api_base_url: str | None = None
+    iom_dtm_api_key: str | None = None
 
     @property
     def fynura_model(self) -> str:

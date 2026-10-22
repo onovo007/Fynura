@@ -1,0 +1,16 @@
+pilot:
+  countries: [COD, KEN, NGA, UGA]
+  threats: [ebola, cholera]
+  duration_days: 28
+  environment: non_production
+  public_output: false
+  required_gates:
+    - licence_review
+    - credential_secret_manager
+    - schema_and_geography_validation
+    - source_reconciliation
+    - retrospective_validation
+    - privacy_review
+    - expert_advisory_review
+    - failure_and_freshness_tests
+
