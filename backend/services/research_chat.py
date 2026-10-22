@@ -66,6 +66,7 @@ class HealthSearch(GoogleSearchTool):
             'facebook.com', 'instagram.com', 'tiktok.com', 'x.com', 'twitter.com',
             'reddit.com', 'blogspot.com', 'youtube.com', 'pinterest.com',
             'medicalbrief.co.za', 'embracerelief.org', 'study.com', 'rgare.com',
+            'webmd.com', 'kidshealth.org', 'pbs.org',
         ]
 
 
@@ -177,7 +178,7 @@ def grounded_result(answer, metadata, model):
                 "evidence_status": "Live source grounding unavailable", "suggestions": ""}
     official_domains = ('who.int', 'cdc.gov', 'africacdc.org', 'ecdc.europa.eu',
                         'paho.org', 'gov.uk', 'health.go.ke', 'health.go.ug',
-                        'ncdc.gov.ng', 'nih.gov', 'ncbi.nlm.nih.gov')
+                        'ncdc.gov.ng', 'nih.gov', 'ncbi.nlm.nih.gov', 'cancer.gov')
     for source in sources:
         publisher = (source['domain'] or source['title']).lower().removeprefix('www.')
         official = any(publisher == domain or publisher.endswith('.' + domain) for domain in official_domains)
