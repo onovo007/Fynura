@@ -5,7 +5,12 @@ from backend.config import get_settings
 from backend.epidemiology.metrics import crude_cfr
 from backend.evidence import calculate_confidence, fuse_observations
 from backend.models.domain import Assessment, Claim
-from backend.sources import WHOCholeraAdapter, WHOEbolaAdapter, WHOMeaslesAdapter
+from backend.sources import (
+    NCDCEbolaAdvisoryAdapter,
+    WHOCholeraAdapter,
+    WHOEbolaAdapter,
+    WHOMeaslesAdapter,
+)
 
 log = logging.getLogger("fynura.pipeline")
 
@@ -77,6 +82,7 @@ class Pipeline:
         adapter = WHOEbolaAdapter()
         documents = await adapter.retrieve(get_settings().request_timeout_seconds)
         observations = adapter.extract(documents, run_id)
+        observations.extend(NCDCEbolaAdvisoryAdapter().extract_reviewed(run_id))
         groups = fuse_observations(observations)
         confidence = calculate_confidence(observations, groups)
         cases = sorted(

@@ -29,6 +29,15 @@ SUPPORTED_METRICS = {
 }
 
 
+def _indicators(disease: str, metric: str) -> set[str]:
+    indicator = SUPPORTED_METRICS[disease].get(metric)
+    if not indicator:
+        return set()
+    if disease == "ebola" and metric == "signal":
+        return {indicator, "preparedness_advisory"}
+    return {indicator}
+
+
 def _latest(rows: list[Observation]) -> list[Observation]:
     latest: dict[tuple[str, str], Observation] = {}
     for row in rows:
@@ -50,19 +59,24 @@ def build_map_data(
     available_metrics: dict[str, list[str]] = {}
     for assessment in assessments:
         disease = assessment.threat_id
-        available_metrics[disease] = [key for key, value in SUPPORTED_METRICS[disease].items()
-                                      if any(o.indicator == value and o.geography.level == 'country' for o in assessment.observations)]
+        available_metrics[disease] = [
+            key for key in SUPPORTED_METRICS[disease]
+            if any(
+                o.indicator in _indicators(disease, key) and o.geography.level == "country"
+                for o in assessment.observations
+            )
+        ]
         if threat != "all" and disease != threat:
             continue
-        indicator = SUPPORTED_METRICS[disease].get(metric)
-        if not indicator:
+        indicators = _indicators(disease, metric)
+        if not indicators:
             continue
         selected_ids = {g.selected_observation_id for g in fuse_observations(assessment.observations)}
         rows = _latest(
             [
                 row
                 for row in assessment.observations
-                if row.geography.level == "country" and row.indicator == indicator
+                if row.geography.level == "country" and row.indicator in indicators
                 and row.observation_id in selected_ids
                 and (not country or row.geography.iso3 == country)
                 and (not period or str(row.reporting_period_end) == period)
@@ -76,7 +90,7 @@ def build_map_data(
             "represented": len(represented),
             "unit": "reporting countries" if disease != "ebola" else "affected geographies",
             "reporting_cutoff": cutoff,
-            "indicator": indicator,
+            "indicator": "reported_signal" if len(indicators) > 1 else next(iter(indicators)),
         }
         for row in rows:
             geo = row.geography
@@ -93,9 +107,14 @@ def build_map_data(
                 "indicator": row.indicator,
                 "value": row.value,
                 "unit": row.unit,
+                "interpretation": row.case_definition,
                 "reporting_cutoff": row.reporting_period_end,
                 "publication_date": row.publication_date,
-                "source": "World Health Organization",
+                "source": (
+                    "Nigeria Centre for Disease Control and Prevention"
+                    if row.source_id == "ncdc_ebola_advisory"
+                    else "World Health Organization"
+                ),
                 "source_id": row.source_id,
                 "source_url": row.source_url,
                 "evidence_id": row.observation_id,
