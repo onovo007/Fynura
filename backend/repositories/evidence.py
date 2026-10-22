@@ -5,6 +5,7 @@ from google.cloud import firestore
 
 from backend.config import get_settings
 from backend.models.domain import Assessment
+from backend.models.source_document import SourceDocument
 from backend.repositories.memory import MemoryRepository
 
 
@@ -58,3 +59,30 @@ class EvidenceRepository(MemoryRepository):
             if pointer.exists:
                 return self.get_assessment(pointer.to_dict()['assessment_id'])
         return super().latest_assessment(threat_id)
+
+    def save_source_document(self, document: SourceDocument) -> SourceDocument:
+        if get_settings().fynura_use_firestore:
+            # The checksum is an idempotency key. Only metadata is retained;
+            # the publisher's PDF body is not copied into Firestore.
+            self.db().collection('source_documents').document(document.checksum).set(
+                document.model_dump(mode='json'), merge=True
+            )
+        return super().save_source_document(document)
+
+    def get_source_document(self, checksum: str):
+        cached = super().get_source_document(checksum)
+        if cached or not get_settings().fynura_use_firestore:
+            return cached
+        snapshot = self.db().collection('source_documents').document(checksum).get()
+        if not snapshot.exists:
+            return None
+        payload = snapshot.to_dict()
+        self.source_documents[checksum] = payload
+        return payload
+
+    def has_source_document(self, checksum: str) -> bool:
+        if super().has_source_document(checksum):
+            return True
+        if not get_settings().fynura_use_firestore:
+            return False
+        return self.db().collection('source_documents').document(checksum).get().exists

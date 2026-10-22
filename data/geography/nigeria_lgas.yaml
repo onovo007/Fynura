@@ -1,0 +1,2327 @@
+source: Nigeria National Bureau of Statistics GHS Panel 2023-2024 metadata
+source_url: https://microdata.nigerianstat.gov.ng/index.php/catalog/82/variable/V2899
+review_status: reviewed
+expected_records: 774
+lgas:
+- code: '0101'
+  state_code: '01'
+  name: Aba North
+- code: '0102'
+  state_code: '01'
+  name: Aba South
+- code: '0103'
+  state_code: '01'
+  name: Arochukwu
+- code: '0104'
+  state_code: '01'
+  name: Bende
+- code: '0105'
+  state_code: '01'
+  name: Ikwuano
+- code: '0106'
+  state_code: '01'
+  name: Isialangwa North
+- code: '0107'
+  state_code: '01'
+  name: Isialangwa South
+- code: 0108
+  state_code: '01'
+  name: Isiukwuato
+- code: 0109
+  state_code: '01'
+  name: Obingwa
+- code: '0110'
+  state_code: '01'
+  name: Ohafia
+- code: '0111'
+  state_code: '01'
+  name: Osisioma
+- code: '0112'
+  state_code: '01'
+  name: Ugwunagbo
+- code: '0113'
+  state_code: '01'
+  name: Ukwa East
+- code: '0114'
+  state_code: '01'
+  name: Ukwa West
+- code: '0115'
+  state_code: '01'
+  name: Umuahia North
+- code: '0116'
+  state_code: '01'
+  name: Umuahia South
+- code: '0117'
+  state_code: '01'
+  name: Umunneochi
+- code: '0201'
+  state_code: '02'
+  name: Demsa
+- code: '0202'
+  state_code: '02'
+  name: Fufore
+- code: '0203'
+  state_code: '02'
+  name: Ganye
+- code: '0204'
+  state_code: '02'
+  name: Girei
+- code: '0205'
+  state_code: '02'
+  name: Gombi
+- code: '0206'
+  state_code: '02'
+  name: Guyuk
+- code: '0207'
+  state_code: '02'
+  name: Hong
+- code: 0208
+  state_code: '02'
+  name: Jada
+- code: 0209
+  state_code: '02'
+  name: Larmurde
+- code: '0210'
+  state_code: '02'
+  name: Madagali
+- code: '0211'
+  state_code: '02'
+  name: Maiha
+- code: '0212'
+  state_code: '02'
+  name: Mayo Belwa
+- code: '0213'
+  state_code: '02'
+  name: Michika
+- code: '0214'
+  state_code: '02'
+  name: Mubi North
+- code: '0215'
+  state_code: '02'
+  name: Mubi South
+- code: '0216'
+  state_code: '02'
+  name: Numan
+- code: '0217'
+  state_code: '02'
+  name: Shelleng
+- code: 0218
+  state_code: '02'
+  name: Song
+- code: 0219
+  state_code: '02'
+  name: Toungo
+- code: '0220'
+  state_code: '02'
+  name: Yola North
+- code: '0221'
+  state_code: '02'
+  name: Yola South
+- code: '0301'
+  state_code: '03'
+  name: Abak
+- code: '0302'
+  state_code: '03'
+  name: Eastern Obolo
+- code: '0303'
+  state_code: '03'
+  name: Eket
+- code: '0304'
+  state_code: '03'
+  name: Esit Eket
+- code: '0305'
+  state_code: '03'
+  name: Essien Udim
+- code: '0306'
+  state_code: '03'
+  name: Etim Ekpo
+- code: '0307'
+  state_code: '03'
+  name: Etinan
+- code: 0308
+  state_code: '03'
+  name: Ibono
+- code: 0309
+  state_code: '03'
+  name: Ibesikpo Asutan
+- code: '0310'
+  state_code: '03'
+  name: Ibiono Ibom
+- code: '0311'
+  state_code: '03'
+  name: Ika
+- code: '0312'
+  state_code: '03'
+  name: Ikono
+- code: '0313'
+  state_code: '03'
+  name: Ikot Abasi
+- code: '0314'
+  state_code: '03'
+  name: Ikot Ekpene
+- code: '0315'
+  state_code: '03'
+  name: Ini
+- code: '0316'
+  state_code: '03'
+  name: Itu
+- code: '0317'
+  state_code: '03'
+  name: Mbo
+- code: 0318
+  state_code: '03'
+  name: Mkpat Enin
+- code: 0319
+  state_code: '03'
+  name: Nsit Atai
+- code: '0320'
+  state_code: '03'
+  name: Nsit Ibom
+- code: '0321'
+  state_code: '03'
+  name: Nsit Ubium
+- code: '0322'
+  state_code: '03'
+  name: Obot Akara
+- code: '0323'
+  state_code: '03'
+  name: Okobo
+- code: '0324'
+  state_code: '03'
+  name: Onna
+- code: '0325'
+  state_code: '03'
+  name: Oron
+- code: '0326'
+  state_code: '03'
+  name: Oruk Anam
+- code: '0327'
+  state_code: '03'
+  name: Udung Ukot
+- code: 0328
+  state_code: '03'
+  name: Ukanafun
+- code: 0329
+  state_code: '03'
+  name: Uruan
+- code: '0330'
+  state_code: '03'
+  name: Urue Offong Oruko
+- code: '0331'
+  state_code: '03'
+  name: Uyo
+- code: '0401'
+  state_code: '04'
+  name: Aguata
+- code: '0402'
+  state_code: '04'
+  name: Anambra East
+- code: '0403'
+  state_code: '04'
+  name: Anambra West
+- code: '0404'
+  state_code: '04'
+  name: Aniocha
+- code: '0405'
+  state_code: '04'
+  name: Awka North
+- code: '0406'
+  state_code: '04'
+  name: Awka South
+- code: '0407'
+  state_code: '04'
+  name: Ayamelum
+- code: 0408
+  state_code: '04'
+  name: Dunukofia
+- code: 0409
+  state_code: '04'
+  name: Idemili North
+- code: '0410'
+  state_code: '04'
+  name: Idemili South
+- code: '0411'
+  state_code: '04'
+  name: Ihiala
+- code: '0412'
+  state_code: '04'
+  name: Ekwusigo
+- code: '0413'
+  state_code: '04'
+  name: Njikoka
+- code: '0414'
+  state_code: '04'
+  name: Nnewi North
+- code: '0415'
+  state_code: '04'
+  name: Nnewi South
+- code: '0416'
+  state_code: '04'
+  name: Ogbara
+- code: '0417'
+  state_code: '04'
+  name: Onitsha North
+- code: 0418
+  state_code: '04'
+  name: Onitsha South
+- code: 0419
+  state_code: '04'
+  name: Orumba North
+- code: '0420'
+  state_code: '04'
+  name: Orumba South
+- code: '0421'
+  state_code: '04'
+  name: Oyi
+- code: '0501'
+  state_code: '05'
+  name: Alkaleri
+- code: '0502'
+  state_code: '05'
+  name: Bauchi
+- code: '0503'
+  state_code: '05'
+  name: Bogoro
+- code: '0504'
+  state_code: '05'
+  name: Dambam
+- code: '0505'
+  state_code: '05'
+  name: Darazo
+- code: '0506'
+  state_code: '05'
+  name: Dass
+- code: '0507'
+  state_code: '05'
+  name: Gamawa
+- code: 0508
+  state_code: '05'
+  name: Giade
+- code: 0509
+  state_code: '05'
+  name: Gunjuwa
+- code: '0510'
+  state_code: '05'
+  name: Itas Gadau
+- code: '0511'
+  state_code: '05'
+  name: Jamare
+- code: '0512'
+  state_code: '05'
+  name: Katagum
+- code: '0513'
+  state_code: '05'
+  name: Kirfi
+- code: '0514'
+  state_code: '05'
+  name: Misau
+- code: '0515'
+  state_code: '05'
+  name: Ningi
+- code: '0516'
+  state_code: '05'
+  name: Shira
+- code: '0517'
+  state_code: '05'
+  name: Tafawa Balewa
+- code: 0518
+  state_code: '05'
+  name: Toro
+- code: 0519
+  state_code: '05'
+  name: Warji
+- code: '0520'
+  state_code: '05'
+  name: Zaki
+- code: '0601'
+  state_code: '06'
+  name: Brass
+- code: '0602'
+  state_code: '06'
+  name: Ekeremor
+- code: '0603'
+  state_code: '06'
+  name: Kolokuma
+- code: '0604'
+  state_code: '06'
+  name: Nembe
+- code: '0605'
+  state_code: '06'
+  name: Ogbia
+- code: '0606'
+  state_code: '06'
+  name: Sagbama
+- code: '0607'
+  state_code: '06'
+  name: Southern Ijaw
+- code: 0608
+  state_code: '06'
+  name: Yenegoa
+- code: '0701'
+  state_code: '07'
+  name: Ador
+- code: '0702'
+  state_code: '07'
+  name: Agatu
+- code: '0703'
+  state_code: '07'
+  name: Apa
+- code: '0704'
+  state_code: '07'
+  name: Buruku
+- code: '0705'
+  state_code: '07'
+  name: Gboko
+- code: '0706'
+  state_code: '07'
+  name: Guma
+- code: '0707'
+  state_code: '07'
+  name: Gwer
+- code: 0708
+  state_code: '07'
+  name: Gwer West
+- code: 0709
+  state_code: '07'
+  name: Katsina Ala
+- code: '0710'
+  state_code: '07'
+  name: Konshisha
+- code: '0711'
+  state_code: '07'
+  name: Kwande
+- code: '0712'
+  state_code: '07'
+  name: Logo
+- code: '0713'
+  state_code: '07'
+  name: Markurdi
+- code: '0714'
+  state_code: '07'
+  name: Obi (Benue State)
+- code: '0715'
+  state_code: '07'
+  name: Ogbadibo
+- code: '0716'
+  state_code: '07'
+  name: Ohimini
+- code: '0717'
+  state_code: '07'
+  name: Oju
+- code: 0718
+  state_code: '07'
+  name: Okpokwu
+- code: 0719
+  state_code: '07'
+  name: Otukpo
+- code: '0720'
+  state_code: '07'
+  name: Tarka
+- code: '0721'
+  state_code: '07'
+  name: Ukum
+- code: '0722'
+  state_code: '07'
+  name: Ushongo
+- code: '0723'
+  state_code: '07'
+  name: Vandeikya
+- code: 0801
+  state_code: 08
+  name: Abadan
+- code: 0802
+  state_code: 08
+  name: Askira Uba
+- code: 0803
+  state_code: 08
+  name: Bama
+- code: 0804
+  state_code: 08
+  name: Bayo
+- code: 0805
+  state_code: 08
+  name: Biu
+- code: 0806
+  state_code: 08
+  name: Chibok
+- code: 0807
+  state_code: 08
+  name: Damboa
+- code: 0808
+  state_code: 08
+  name: Dikwa
+- code: 0809
+  state_code: 08
+  name: Gubio
+- code: 0810
+  state_code: 08
+  name: Guzamala
+- code: 0811
+  state_code: 08
+  name: Gwazo
+- code: 0812
+  state_code: 08
+  name: Hawul
+- code: 0813
+  state_code: 08
+  name: Jere
+- code: 0814
+  state_code: 08
+  name: Kaga
+- code: 0815
+  state_code: 08
+  name: Kalabalge
+- code: 0816
+  state_code: 08
+  name: Konduga
+- code: 0817
+  state_code: 08
+  name: Kukawa
+- code: 0818
+  state_code: 08
+  name: Kwaya Kusar
+- code: 0819
+  state_code: 08
+  name: Mafa
+- code: 0820
+  state_code: 08
+  name: Magumeri
+- code: 0821
+  state_code: 08
+  name: Maiduguri
+- code: 0822
+  state_code: 08
+  name: Marte
+- code: 0823
+  state_code: 08
+  name: Mobbar
+- code: 0824
+  state_code: 08
+  name: Monguno
+- code: 0825
+  state_code: 08
+  name: Ngala
+- code: 0826
+  state_code: 08
+  name: Nganzai
+- code: 0827
+  state_code: 08
+  name: Shani
+- code: 0901
+  state_code: 09
+  name: Abi
+- code: 0902
+  state_code: 09
+  name: Akamkpa
+- code: 0903
+  state_code: 09
+  name: Akpabuyo
+- code: 0904
+  state_code: 09
+  name: Bakassi
+- code: 0905
+  state_code: 09
+  name: Bekwarra
+- code: 0906
+  state_code: 09
+  name: Biase
+- code: 0907
+  state_code: 09
+  name: Boki
+- code: 0908
+  state_code: 09
+  name: Calabar Municipal
+- code: 0909
+  state_code: 09
+  name: Calabar South
+- code: 0910
+  state_code: 09
+  name: Etung
+- code: 0911
+  state_code: 09
+  name: Ikom
+- code: 0912
+  state_code: 09
+  name: Obanliku
+- code: 0913
+  state_code: 09
+  name: Obubra
+- code: 0914
+  state_code: 09
+  name: Obudu
+- code: 0915
+  state_code: 09
+  name: Odukpani
+- code: 0916
+  state_code: 09
+  name: Ogoja
+- code: 0917
+  state_code: 09
+  name: Yakurr Ugep North
+- code: 0918
+  state_code: 09
+  name: Yala
+- code: '1001'
+  state_code: '10'
+  name: Aniocha North
+- code: '1002'
+  state_code: '10'
+  name: Aniocha South
+- code: '1003'
+  state_code: '10'
+  name: Bomadi
+- code: '1004'
+  state_code: '10'
+  name: Burutu
+- code: '1005'
+  state_code: '10'
+  name: Ethiope East
+- code: '1006'
+  state_code: '10'
+  name: Ethiope West
+- code: '1007'
+  state_code: '10'
+  name: Ika North East
+- code: '1008'
+  state_code: '10'
+  name: Ika South
+- code: '1009'
+  state_code: '10'
+  name: Isoko North
+- code: '1010'
+  state_code: '10'
+  name: Isoko South
+- code: '1011'
+  state_code: '10'
+  name: Ndokwa East
+- code: '1012'
+  state_code: '10'
+  name: Ndokwa West
+- code: '1013'
+  state_code: '10'
+  name: Okpe
+- code: '1014'
+  state_code: '10'
+  name: Oshimili North
+- code: '1015'
+  state_code: '10'
+  name: Oshimili South
+- code: '1016'
+  state_code: '10'
+  name: Patani
+- code: '1017'
+  state_code: '10'
+  name: Sapele
+- code: '1018'
+  state_code: '10'
+  name: Udu
+- code: '1019'
+  state_code: '10'
+  name: Ughelli North
+- code: '1020'
+  state_code: '10'
+  name: Ughelli South
+- code: '1021'
+  state_code: '10'
+  name: Ukwuani
+- code: '1022'
+  state_code: '10'
+  name: Uwie
+- code: '1023'
+  state_code: '10'
+  name: Warri North
+- code: '1024'
+  state_code: '10'
+  name: Warr  South West
+- code: '1025'
+  state_code: '10'
+  name: Warr  South
+- code: '1101'
+  state_code: '11'
+  name: Abakaliki
+- code: '1102'
+  state_code: '11'
+  name: Afikpo North
+- code: '1103'
+  state_code: '11'
+  name: Afikpo South
+- code: '1104'
+  state_code: '11'
+  name: Ebonyi
+- code: '1105'
+  state_code: '11'
+  name: Ezza North
+- code: '1106'
+  state_code: '11'
+  name: Ezza South
+- code: '1107'
+  state_code: '11'
+  name: Ikwo
+- code: '1108'
+  state_code: '11'
+  name: Ishielu
+- code: '1109'
+  state_code: '11'
+  name: Ivo
+- code: '1110'
+  state_code: '11'
+  name: Izzi
+- code: '1111'
+  state_code: '11'
+  name: Ohaozara
+- code: '1112'
+  state_code: '11'
+  name: Ohaukwu
+- code: '1113'
+  state_code: '11'
+  name: Onicha
+- code: '1201'
+  state_code: '12'
+  name: Akoko Edo
+- code: '1202'
+  state_code: '12'
+  name: Egor
+- code: '1203'
+  state_code: '12'
+  name: Esan North East
+- code: '1204'
+  state_code: '12'
+  name: Esan Central
+- code: '1205'
+  state_code: '12'
+  name: Esan South East
+- code: '1206'
+  state_code: '12'
+  name: Esan West
+- code: '1207'
+  state_code: '12'
+  name: Etsako Central
+- code: '1208'
+  state_code: '12'
+  name: Etsako East
+- code: '1209'
+  state_code: '12'
+  name: Etsako West
+- code: '1210'
+  state_code: '12'
+  name: Igugben
+- code: '1211'
+  state_code: '12'
+  name: Ikpoba Okha
+- code: '1212'
+  state_code: '12'
+  name: Oredo
+- code: '1213'
+  state_code: '12'
+  name: Orhionmwon
+- code: '1214'
+  state_code: '12'
+  name: Ovia North East
+- code: '1215'
+  state_code: '12'
+  name: Ovia South West
+- code: '1216'
+  state_code: '12'
+  name: Owan East
+- code: '1217'
+  state_code: '12'
+  name: Owan West
+- code: '1218'
+  state_code: '12'
+  name: Uhunmuonde
+- code: '1301'
+  state_code: '13'
+  name: Ado Ekiti
+- code: '1302'
+  state_code: '13'
+  name: Efon
+- code: '1303'
+  state_code: '13'
+  name: Ekiti East
+- code: '1304'
+  state_code: '13'
+  name: Ekiti South West
+- code: '1305'
+  state_code: '13'
+  name: Ekiti West
+- code: '1306'
+  state_code: '13'
+  name: Emure
+- code: '1307'
+  state_code: '13'
+  name: Gboyin
+- code: '1308'
+  state_code: '13'
+  name: Ido Osi
+- code: '1309'
+  state_code: '13'
+  name: Ijero
+- code: '1310'
+  state_code: '13'
+  name: Ikare
+- code: '1311'
+  state_code: '13'
+  name: Ikole
+- code: '1312'
+  state_code: '13'
+  name: Iiejemeje
+- code: '1313'
+  state_code: '13'
+  name: Irepodun Ifelod
+- code: '1314'
+  state_code: '13'
+  name: Iseorun
+- code: '1315'
+  state_code: '13'
+  name: Moba
+- code: '1316'
+  state_code: '13'
+  name: Oye
+- code: '1401'
+  state_code: '14'
+  name: Aninri
+- code: '1402'
+  state_code: '14'
+  name: Awgu
+- code: '1403'
+  state_code: '14'
+  name: Enugu East
+- code: '1404'
+  state_code: '14'
+  name: Enugu North
+- code: '1405'
+  state_code: '14'
+  name: Enugu South
+- code: '1406'
+  state_code: '14'
+  name: Eze Agu
+- code: '1407'
+  state_code: '14'
+  name: Igbo Etiti
+- code: '1408'
+  state_code: '14'
+  name: Igbo Eze North
+- code: '1409'
+  state_code: '14'
+  name: Igbo Eze South
+- code: '1410'
+  state_code: '14'
+  name: Isi Uzo
+- code: '1411'
+  state_code: '14'
+  name: Nkanu East
+- code: '1412'
+  state_code: '14'
+  name: Nkanu West
+- code: '1413'
+  state_code: '14'
+  name: Nsukka
+- code: '1414'
+  state_code: '14'
+  name: Oji River
+- code: '1415'
+  state_code: '14'
+  name: Udenu
+- code: '1416'
+  state_code: '14'
+  name: Udi
+- code: '1417'
+  state_code: '14'
+  name: Uzo Uwani
+- code: '1501'
+  state_code: '15'
+  name: Akko
+- code: '1502'
+  state_code: '15'
+  name: Balanga
+- code: '1503'
+  state_code: '15'
+  name: Billiri
+- code: '1504'
+  state_code: '15'
+  name: Dukku
+- code: '1505'
+  state_code: '15'
+  name: Funa Kaye
+- code: '1506'
+  state_code: '15'
+  name: Gombe
+- code: '1507'
+  state_code: '15'
+  name: Kaltungo
+- code: '1508'
+  state_code: '15'
+  name: Kwami
+- code: '1509'
+  state_code: '15'
+  name: Nafada
+- code: '1510'
+  state_code: '15'
+  name: Shongom
+- code: '1511'
+  state_code: '15'
+  name: Yamaltu Deba
+- code: '1601'
+  state_code: '16'
+  name: Aboh Mbaise
+- code: '1602'
+  state_code: '16'
+  name: Ahiazu Mbaise
+- code: '1603'
+  state_code: '16'
+  name: Ehime Mbano
+- code: '1604'
+  state_code: '16'
+  name: Ezinihitte Maise
+- code: '1605'
+  state_code: '16'
+  name: Ideato North
+- code: '1606'
+  state_code: '16'
+  name: Ideato South
+- code: '1607'
+  state_code: '16'
+  name: Ihitte Uboma
+- code: '1608'
+  state_code: '16'
+  name: Ikeduru
+- code: '1609'
+  state_code: '16'
+  name: Isiala Mbano
+- code: '1610'
+  state_code: '16'
+  name: Isu
+- code: '1611'
+  state_code: '16'
+  name: Mbaitoli
+- code: '1612'
+  state_code: '16'
+  name: Ngor Okapa
+- code: '1613'
+  state_code: '16'
+  name: Njaba
+- code: '1614'
+  state_code: '16'
+  name: Nwerre
+- code: '1615'
+  state_code: '16'
+  name: Nwangele
+- code: '1616'
+  state_code: '16'
+  name: Obowo
+- code: '1617'
+  state_code: '16'
+  name: Oguta
+- code: '1618'
+  state_code: '16'
+  name: Ohaji Egbema
+- code: '1619'
+  state_code: '16'
+  name: Okigwe
+- code: '1620'
+  state_code: '16'
+  name: Orlu
+- code: '1621'
+  state_code: '16'
+  name: Orsu
+- code: '1622'
+  state_code: '16'
+  name: Oru East
+- code: '1623'
+  state_code: '16'
+  name: Oru West
+- code: '1624'
+  state_code: '16'
+  name: Owerri Municipal
+- code: '1625'
+  state_code: '16'
+  name: Owerri North
+- code: '1626'
+  state_code: '16'
+  name: Owerri West
+- code: '1627'
+  state_code: '16'
+  name: Onuimo
+- code: '1701'
+  state_code: '17'
+  name: Auyo
+- code: '1702'
+  state_code: '17'
+  name: Babura
+- code: '1703'
+  state_code: '17'
+  name: Birnin Kudu
+- code: '1704'
+  state_code: '17'
+  name: Birinwa
+- code: '1705'
+  state_code: '17'
+  name: Buji
+- code: '1706'
+  state_code: '17'
+  name: Dutse
+- code: '1707'
+  state_code: '17'
+  name: Gagarawa
+- code: '1708'
+  state_code: '17'
+  name: Garki
+- code: '1709'
+  state_code: '17'
+  name: Gumel
+- code: '1710'
+  state_code: '17'
+  name: Guri
+- code: '1711'
+  state_code: '17'
+  name: Gwaram
+- code: '1712'
+  state_code: '17'
+  name: Gwiwa
+- code: '1713'
+  state_code: '17'
+  name: Jadejia
+- code: '1714'
+  state_code: '17'
+  name: Jahun
+- code: '1715'
+  state_code: '17'
+  name: Kahin Hausa
+- code: '1716'
+  state_code: '17'
+  name: Kaugama
+- code: '1717'
+  state_code: '17'
+  name: Kazaure
+- code: '1718'
+  state_code: '17'
+  name: Kirikasamma
+- code: '1719'
+  state_code: '17'
+  name: Kiyawa
+- code: '1720'
+  state_code: '17'
+  name: Maigatari
+- code: '1721'
+  state_code: '17'
+  name: Malam Madori
+- code: '1722'
+  state_code: '17'
+  name: Miga
+- code: '1723'
+  state_code: '17'
+  name: Rigim
+- code: '1724'
+  state_code: '17'
+  name: Roni
+- code: '1725'
+  state_code: '17'
+  name: Sule Tankar Kar
+- code: '1726'
+  state_code: '17'
+  name: Taura
+- code: '1727'
+  state_code: '17'
+  name: Yan Kwashi
+- code: '1801'
+  state_code: '18'
+  name: Birinin Gwari
+- code: '1802'
+  state_code: '18'
+  name: Chikun
+- code: '1803'
+  state_code: '18'
+  name: Giwa
+- code: '1804'
+  state_code: '18'
+  name: Igabi
+- code: '1805'
+  state_code: '18'
+  name: Ikara
+- code: '1806'
+  state_code: '18'
+  name: Jaba
+- code: '1807'
+  state_code: '18'
+  name: Jema A
+- code: '1808'
+  state_code: '18'
+  name: Kachia
+- code: '1809'
+  state_code: '18'
+  name: Kaduna North
+- code: '1810'
+  state_code: '18'
+  name: Kaduna South
+- code: '1811'
+  state_code: '18'
+  name: Kagarko
+- code: '1812'
+  state_code: '18'
+  name: Kajuru
+- code: '1813'
+  state_code: '18'
+  name: Kauru
+- code: '1814'
+  state_code: '18'
+  name: Kaura
+- code: '1815'
+  state_code: '18'
+  name: Kubau
+- code: '1816'
+  state_code: '18'
+  name: Kudan
+- code: '1817'
+  state_code: '18'
+  name: Lere
+- code: '1818'
+  state_code: '18'
+  name: Makarfi
+- code: '1819'
+  state_code: '18'
+  name: Sabon Gari
+- code: '1820'
+  state_code: '18'
+  name: Sanga
+- code: '1821'
+  state_code: '18'
+  name: Soba
+- code: '1822'
+  state_code: '18'
+  name: Zongon Kataf
+- code: '1823'
+  state_code: '18'
+  name: Zaria
+- code: '1901'
+  state_code: '19'
+  name: Ajingi
+- code: '1902'
+  state_code: '19'
+  name: Albasu
+- code: '1903'
+  state_code: '19'
+  name: Bagwai
+- code: '1904'
+  state_code: '19'
+  name: Bebeji
+- code: '1905'
+  state_code: '19'
+  name: Bichi
+- code: '1906'
+  state_code: '19'
+  name: Bunkure
+- code: '1907'
+  state_code: '19'
+  name: Dala
+- code: '1908'
+  state_code: '19'
+  name: Dambatta
+- code: '1909'
+  state_code: '19'
+  name: Dawakin Kudu
+- code: '1910'
+  state_code: '19'
+  name: Dawakin Tofa
+- code: '1911'
+  state_code: '19'
+  name: Doguwa
+- code: '1912'
+  state_code: '19'
+  name: Fagge
+- code: '1913'
+  state_code: '19'
+  name: Gabasawa
+- code: '1914'
+  state_code: '19'
+  name: Garko
+- code: '1915'
+  state_code: '19'
+  name: Garun Malam
+- code: '1916'
+  state_code: '19'
+  name: Gaya
+- code: '1917'
+  state_code: '19'
+  name: Gezawa
+- code: '1918'
+  state_code: '19'
+  name: Gwale
+- code: '1919'
+  state_code: '19'
+  name: Gwarzo
+- code: '1920'
+  state_code: '19'
+  name: Kabo
+- code: '1921'
+  state_code: '19'
+  name: Kano Municipal
+- code: '1922'
+  state_code: '19'
+  name: Karaye
+- code: '1923'
+  state_code: '19'
+  name: Kibiya
+- code: '1924'
+  state_code: '19'
+  name: Kiru
+- code: '1925'
+  state_code: '19'
+  name: Kumbotso
+- code: '1926'
+  state_code: '19'
+  name: Kunchi
+- code: '1927'
+  state_code: '19'
+  name: Kura
+- code: '1928'
+  state_code: '19'
+  name: Madobi
+- code: '1929'
+  state_code: '19'
+  name: Makoda
+- code: '1930'
+  state_code: '19'
+  name: Minjibir
+- code: '1931'
+  state_code: '19'
+  name: Nasarawa (Kano State)
+- code: '1932'
+  state_code: '19'
+  name: Rano
+- code: '1933'
+  state_code: '19'
+  name: Rimin Gado
+- code: '1934'
+  state_code: '19'
+  name: Rogo
+- code: '1935'
+  state_code: '19'
+  name: Shanono
+- code: '1936'
+  state_code: '19'
+  name: Sumaila
+- code: '1937'
+  state_code: '19'
+  name: Takai
+- code: '1938'
+  state_code: '19'
+  name: Tarauni
+- code: '1939'
+  state_code: '19'
+  name: Tofa
+- code: '1940'
+  state_code: '19'
+  name: Tsanyawa
+- code: '1941'
+  state_code: '19'
+  name: Tudun Wada
+- code: '1942'
+  state_code: '19'
+  name: Ungogo
+- code: '1943'
+  state_code: '19'
+  name: Warawa
+- code: '1944'
+  state_code: '19'
+  name: Wudil
+- code: '2001'
+  state_code: '20'
+  name: Bakori
+- code: '2002'
+  state_code: '20'
+  name: Batagarawa
+- code: '2003'
+  state_code: '20'
+  name: Batsari
+- code: '2004'
+  state_code: '20'
+  name: Baure
+- code: '2005'
+  state_code: '20'
+  name: Bindawa
+- code: '2006'
+  state_code: '20'
+  name: Charanchi
+- code: '2007'
+  state_code: '20'
+  name: Dan Musa
+- code: '2008'
+  state_code: '20'
+  name: Dandume
+- code: '2009'
+  state_code: '20'
+  name: Danja
+- code: '2010'
+  state_code: '20'
+  name: Daura
+- code: '2011'
+  state_code: '20'
+  name: Dutsi
+- code: '2012'
+  state_code: '20'
+  name: Dutsi Ma
+- code: '2013'
+  state_code: '20'
+  name: Faskari
+- code: '2014'
+  state_code: '20'
+  name: Funtua
+- code: '2015'
+  state_code: '20'
+  name: Ingawa
+- code: '2016'
+  state_code: '20'
+  name: Jibia
+- code: '2017'
+  state_code: '20'
+  name: Kafur
+- code: '2018'
+  state_code: '20'
+  name: Kaita
+- code: '2019'
+  state_code: '20'
+  name: Kankara
+- code: '2020'
+  state_code: '20'
+  name: Kankia
+- code: '2021'
+  state_code: '20'
+  name: Katsina
+- code: '2022'
+  state_code: '20'
+  name: Kurfi
+- code: '2023'
+  state_code: '20'
+  name: Kusada
+- code: '2024'
+  state_code: '20'
+  name: Mai Adua
+- code: '2025'
+  state_code: '20'
+  name: Malunfashi
+- code: '2026'
+  state_code: '20'
+  name: Mani
+- code: '2027'
+  state_code: '20'
+  name: Mashi
+- code: '2028'
+  state_code: '20'
+  name: Matazu
+- code: '2029'
+  state_code: '20'
+  name: Musawa
+- code: '2030'
+  state_code: '20'
+  name: Rimi
+- code: '2031'
+  state_code: '20'
+  name: Sabuwa
+- code: '2032'
+  state_code: '20'
+  name: Safana
+- code: '2033'
+  state_code: '20'
+  name: Sandamu
+- code: '2034'
+  state_code: '20'
+  name: Zango
+- code: '2101'
+  state_code: '21'
+  name: Aliero
+- code: '2102'
+  state_code: '21'
+  name: Arewa
+- code: '2103'
+  state_code: '21'
+  name: Argungun
+- code: '2104'
+  state_code: '21'
+  name: Augie
+- code: '2105'
+  state_code: '21'
+  name: Bagudo
+- code: '2106'
+  state_code: '21'
+  name: Birinin Kebbi
+- code: '2107'
+  state_code: '21'
+  name: Bunza
+- code: '2108'
+  state_code: '21'
+  name: Dandi
+- code: '2109'
+  state_code: '21'
+  name: Danko Wasagu
+- code: '2110'
+  state_code: '21'
+  name: Fakai
+- code: '2111'
+  state_code: '21'
+  name: Gwandu
+- code: '2112'
+  state_code: '21'
+  name: Jega
+- code: '2113'
+  state_code: '21'
+  name: Kalgo
+- code: '2114'
+  state_code: '21'
+  name: Koko Besse
+- code: '2115'
+  state_code: '21'
+  name: Maiyama
+- code: '2116'
+  state_code: '21'
+  name: Ngaski
+- code: '2117'
+  state_code: '21'
+  name: Sakaba
+- code: '2118'
+  state_code: '21'
+  name: Shanga
+- code: '2119'
+  state_code: '21'
+  name: Suru
+- code: '2120'
+  state_code: '21'
+  name: Yauri
+- code: '2121'
+  state_code: '21'
+  name: Zuru
+- code: '2201'
+  state_code: '22'
+  name: Adavi
+- code: '2202'
+  state_code: '22'
+  name: Ajaokuta
+- code: '2203'
+  state_code: '22'
+  name: Ankpa
+- code: '2204'
+  state_code: '22'
+  name: Bassa (Kogi State)
+- code: '2205'
+  state_code: '22'
+  name: Dekina
+- code: '2206'
+  state_code: '22'
+  name: Ibaji
+- code: '2207'
+  state_code: '22'
+  name: Idah
+- code: '2208'
+  state_code: '22'
+  name: Igalamela
+- code: '2209'
+  state_code: '22'
+  name: Ijumu
+- code: '2210'
+  state_code: '22'
+  name: Kabba Bunu
+- code: '2211'
+  state_code: '22'
+  name: Kogi
+- code: '2212'
+  state_code: '22'
+  name: Lokoja
+- code: '2213'
+  state_code: '22'
+  name: Mapo Muro
+- code: '2214'
+  state_code: '22'
+  name: Ofu
+- code: '2215'
+  state_code: '22'
+  name: Ogori Magongo
+- code: '2216'
+  state_code: '22'
+  name: Okehi
+- code: '2217'
+  state_code: '22'
+  name: Okene
+- code: '2218'
+  state_code: '22'
+  name: Olama Boro
+- code: '2219'
+  state_code: '22'
+  name: Omala
+- code: '2220'
+  state_code: '22'
+  name: Yagba East
+- code: '2221'
+  state_code: '22'
+  name: Yagba West
+- code: '2301'
+  state_code: '23'
+  name: Asa
+- code: '2302'
+  state_code: '23'
+  name: Baruten
+- code: '2303'
+  state_code: '23'
+  name: Edu
+- code: '2304'
+  state_code: '23'
+  name: Ekiti
+- code: '2305'
+  state_code: '23'
+  name: Ifelodun (Kwara)
+- code: '2306'
+  state_code: '23'
+  name: Ilorin East
+- code: '2307'
+  state_code: '23'
+  name: Ilorin South
+- code: '2308'
+  state_code: '23'
+  name: Ilorin West
+- code: '2309'
+  state_code: '23'
+  name: Irespodun
+- code: '2310'
+  state_code: '23'
+  name: Isin
+- code: '2311'
+  state_code: '23'
+  name: Kaima
+- code: '2312'
+  state_code: '23'
+  name: Moro
+- code: '2313'
+  state_code: '23'
+  name: Offa
+- code: '2314'
+  state_code: '23'
+  name: Oke Ero
+- code: '2315'
+  state_code: '23'
+  name: Oyun
+- code: '2316'
+  state_code: '23'
+  name: Patigi
+- code: '2401'
+  state_code: '24'
+  name: Agege
+- code: '2402'
+  state_code: '24'
+  name: Ajeromi Ifelodu
+- code: '2403'
+  state_code: '24'
+  name: Alimosho
+- code: '2404'
+  state_code: '24'
+  name: Amuwo Odofin
+- code: '2405'
+  state_code: '24'
+  name: Apapa
+- code: '2406'
+  state_code: '24'
+  name: Badagry
+- code: '2407'
+  state_code: '24'
+  name: Epe
+- code: '2408'
+  state_code: '24'
+  name: Eti Osa
+- code: '2409'
+  state_code: '24'
+  name: Ibeju Lekki
+- code: '2410'
+  state_code: '24'
+  name: Ifako Ijaiye
+- code: '2411'
+  state_code: '24'
+  name: Ikeja
+- code: '2412'
+  state_code: '24'
+  name: Ikorodu
+- code: '2413'
+  state_code: '24'
+  name: Kosofe
+- code: '2414'
+  state_code: '24'
+  name: Lagos Island
+- code: '2415'
+  state_code: '24'
+  name: Lagos Mainlan
+- code: '2416'
+  state_code: '24'
+  name: Mushin
+- code: '2417'
+  state_code: '24'
+  name: Ojo
+- code: '2418'
+  state_code: '24'
+  name: Oshodi
+- code: '2419'
+  state_code: '24'
+  name: Shomolu
+- code: '2420'
+  state_code: '24'
+  name: Surulere (Lagos)
+- code: '2501'
+  state_code: '25'
+  name: Akwanga
+- code: '2502'
+  state_code: '25'
+  name: Awe
+- code: '2503'
+  state_code: '25'
+  name: Doma
+- code: '2504'
+  state_code: '25'
+  name: Karu
+- code: '2505'
+  state_code: '25'
+  name: Keana
+- code: '2506'
+  state_code: '25'
+  name: Keffi
+- code: '2507'
+  state_code: '25'
+  name: Kokona
+- code: '2508'
+  state_code: '25'
+  name: Lafia
+- code: '2509'
+  state_code: '25'
+  name: Nasarawa (Nasarawa State)
+- code: '2510'
+  state_code: '25'
+  name: Nasarawa Egon
+- code: '2511'
+  state_code: '25'
+  name: Obi (Nasarawa State)
+- code: '2512'
+  state_code: '25'
+  name: Toto
+- code: '2513'
+  state_code: '25'
+  name: Wamba
+- code: '2601'
+  state_code: '26'
+  name: Agaie
+- code: '2602'
+  state_code: '26'
+  name: Agwara
+- code: '2603'
+  state_code: '26'
+  name: Bida
+- code: '2604'
+  state_code: '26'
+  name: Borgu
+- code: '2605'
+  state_code: '26'
+  name: Bosso
+- code: '2606'
+  state_code: '26'
+  name: Chanchaga
+- code: '2607'
+  state_code: '26'
+  name: Edati
+- code: '2608'
+  state_code: '26'
+  name: Gbako
+- code: '2609'
+  state_code: '26'
+  name: Gurara
+- code: '2610'
+  state_code: '26'
+  name: Katcha
+- code: '2611'
+  state_code: '26'
+  name: Kontagora
+- code: '2612'
+  state_code: '26'
+  name: Lapai
+- code: '2613'
+  state_code: '26'
+  name: Lavun
+- code: '2614'
+  state_code: '26'
+  name: Magama
+- code: '2615'
+  state_code: '26'
+  name: Mariga
+- code: '2616'
+  state_code: '26'
+  name: Mashegu
+- code: '2617'
+  state_code: '26'
+  name: Mokwa
+- code: '2618'
+  state_code: '26'
+  name: Munya
+- code: '2619'
+  state_code: '26'
+  name: Paikoro
+- code: '2620'
+  state_code: '26'
+  name: Rafi
+- code: '2621'
+  state_code: '26'
+  name: Rijav
+- code: '2622'
+  state_code: '26'
+  name: Shiroro
+- code: '2623'
+  state_code: '26'
+  name: Suleja
+- code: '2624'
+  state_code: '26'
+  name: Tafa
+- code: '2625'
+  state_code: '26'
+  name: Wushishi
+- code: '2701'
+  state_code: '27'
+  name: Abeokuta North
+- code: '2702'
+  state_code: '27'
+  name: Abeokuta South
+- code: '2703'
+  state_code: '27'
+  name: Adoodo Ota
+- code: '2704'
+  state_code: '27'
+  name: Yewa North
+- code: '2705'
+  state_code: '27'
+  name: Yewa South
+- code: '2706'
+  state_code: '27'
+  name: Ewekoro
+- code: '2707'
+  state_code: '27'
+  name: Ifo
+- code: '2708'
+  state_code: '27'
+  name: Ijebu East
+- code: '2709'
+  state_code: '27'
+  name: Ijebu North
+- code: '2710'
+  state_code: '27'
+  name: Ijebu North East
+- code: '2711'
+  state_code: '27'
+  name: Ijebu Ode
+- code: '2712'
+  state_code: '27'
+  name: Ikenne
+- code: '2713'
+  state_code: '27'
+  name: Imeko Afon
+- code: '2714'
+  state_code: '27'
+  name: Ipokia
+- code: '2715'
+  state_code: '27'
+  name: Obafemi Owe
+- code: '2716'
+  state_code: '27'
+  name: Odeda
+- code: '2717'
+  state_code: '27'
+  name: Odogbolu
+- code: '2718'
+  state_code: '27'
+  name: Ogun  Waterside
+- code: '2719'
+  state_code: '27'
+  name: Remo North
+- code: '2720'
+  state_code: '27'
+  name: Shagamu
+- code: '2801'
+  state_code: '28'
+  name: Akoko North East
+- code: '2802'
+  state_code: '28'
+  name: Akoko North West
+- code: '2803'
+  state_code: '28'
+  name: Akoko South East
+- code: '2804'
+  state_code: '28'
+  name: Akoko South West
+- code: '2805'
+  state_code: '28'
+  name: Akure North
+- code: '2806'
+  state_code: '28'
+  name: Akure South
+- code: '2807'
+  state_code: '28'
+  name: Ese Odo
+- code: '2808'
+  state_code: '28'
+  name: Idanre
+- code: '2809'
+  state_code: '28'
+  name: Ifedore
+- code: '2810'
+  state_code: '28'
+  name: Ilaje
+- code: '2811'
+  state_code: '28'
+  name: Ile Oluji Okeigbo
+- code: '2812'
+  state_code: '28'
+  name: Irele
+- code: '2813'
+  state_code: '28'
+  name: Odigbo
+- code: '2814'
+  state_code: '28'
+  name: Okitipupa
+- code: '2815'
+  state_code: '28'
+  name: Ondo East
+- code: '2816'
+  state_code: '28'
+  name: Ondo West
+- code: '2817'
+  state_code: '28'
+  name: Ose
+- code: '2818'
+  state_code: '28'
+  name: Owo
+- code: '2901'
+  state_code: '29'
+  name: Aiyedade
+- code: '2902'
+  state_code: '29'
+  name: Aiyedire
+- code: '2903'
+  state_code: '29'
+  name: Atakunmosa East
+- code: '2904'
+  state_code: '29'
+  name: Boluwaduro
+- code: '2905'
+  state_code: '29'
+  name: Boripe
+- code: '2906'
+  state_code: '29'
+  name: Ede North
+- code: '2907'
+  state_code: '29'
+  name: Ede South
+- code: '2908'
+  state_code: '29'
+  name: Egbedore
+- code: '2909'
+  state_code: '29'
+  name: Ejigbo
+- code: '2910'
+  state_code: '29'
+  name: Ife Central
+- code: '2911'
+  state_code: '29'
+  name: Ife East
+- code: '2912'
+  state_code: '29'
+  name: Ife North
+- code: '2913'
+  state_code: '29'
+  name: Ife South
+- code: '2914'
+  state_code: '29'
+  name: Ifedayo
+- code: '2915'
+  state_code: '29'
+  name: Ifelodun (Osun)
+- code: '2916'
+  state_code: '29'
+  name: Ila
+- code: '2917'
+  state_code: '29'
+  name: Ilesha East
+- code: '2918'
+  state_code: '29'
+  name: Ilesha West
+- code: '2919'
+  state_code: '29'
+  name: Irepodun
+- code: '2920'
+  state_code: '29'
+  name: Irewole
+- code: '2921'
+  state_code: '29'
+  name: Isokan
+- code: '2922'
+  state_code: '29'
+  name: Iwo
+- code: '2923'
+  state_code: '29'
+  name: Obokun
+- code: '2924'
+  state_code: '29'
+  name: Odo Otin
+- code: '2925'
+  state_code: '29'
+  name: Ola Oluwa
+- code: '2926'
+  state_code: '29'
+  name: Olorunda
+- code: '2927'
+  state_code: '29'
+  name: Oriade
+- code: '2928'
+  state_code: '29'
+  name: Orolu
+- code: '2929'
+  state_code: '29'
+  name: Oshogbo
+- code: '2930'
+  state_code: '29'
+  name: Atakunmosa West
+- code: '3001'
+  state_code: '30'
+  name: Afijio
+- code: '3002'
+  state_code: '30'
+  name: Akinyele
+- code: '3003'
+  state_code: '30'
+  name: Atiba
+- code: '3004'
+  state_code: '30'
+  name: Atisbo
+- code: '3005'
+  state_code: '30'
+  name: Egbeda
+- code: '3006'
+  state_code: '30'
+  name: Ibadan North
+- code: '3007'
+  state_code: '30'
+  name: Ibadan North East
+- code: '3008'
+  state_code: '30'
+  name: Ibadan North West
+- code: '3009'
+  state_code: '30'
+  name: Ibadan South East
+- code: '3010'
+  state_code: '30'
+  name: Ibadan South West
+- code: '3011'
+  state_code: '30'
+  name: Ibarapa Central
+- code: '3012'
+  state_code: '30'
+  name: Ibarapa East
+- code: '3013'
+  state_code: '30'
+  name: Ibarapa North
+- code: '3014'
+  state_code: '30'
+  name: Ido
+- code: '3015'
+  state_code: '30'
+  name: Irepo
+- code: '3016'
+  state_code: '30'
+  name: Iseyin
+- code: '3017'
+  state_code: '30'
+  name: Itesiwaju
+- code: '3018'
+  state_code: '30'
+  name: Iwajowa
+- code: '3019'
+  state_code: '30'
+  name: Kajola
+- code: '3020'
+  state_code: '30'
+  name: Lagelu
+- code: '3021'
+  state_code: '30'
+  name: Ogbomosho North
+- code: '3022'
+  state_code: '30'
+  name: Ogbomosho South
+- code: '3023'
+  state_code: '30'
+  name: Ogo Oluwa
+- code: '3024'
+  state_code: '30'
+  name: Olorunsogo
+- code: '3025'
+  state_code: '30'
+  name: Oluyole
+- code: '3026'
+  state_code: '30'
+  name: Ona  Ara
+- code: '3027'
+  state_code: '30'
+  name: Orelope
+- code: '3028'
+  state_code: '30'
+  name: Orire
+- code: '3029'
+  state_code: '30'
+  name: Oyo East
+- code: '3030'
+  state_code: '30'
+  name: Oyo West
+- code: '3031'
+  state_code: '30'
+  name: Shaki East
+- code: '3032'
+  state_code: '30'
+  name: Shaki West
+- code: '3033'
+  state_code: '30'
+  name: Surulere (Oyo State)
+- code: '3101'
+  state_code: '31'
+  name: Barkin Ladi
+- code: '3102'
+  state_code: '31'
+  name: Bassa (Plateau State)
+- code: '3103'
+  state_code: '31'
+  name: Bokkos
+- code: '3104'
+  state_code: '31'
+  name: Jos East
+- code: '3105'
+  state_code: '31'
+  name: Jos North
+- code: '3106'
+  state_code: '31'
+  name: Jos South
+- code: '3107'
+  state_code: '31'
+  name: Kanam
+- code: '3108'
+  state_code: '31'
+  name: Kanke
+- code: '3109'
+  state_code: '31'
+  name: Langtang North
+- code: '3110'
+  state_code: '31'
+  name: Langtang South
+- code: '3111'
+  state_code: '31'
+  name: Mangu
+- code: '3112'
+  state_code: '31'
+  name: Mikang
+- code: '3113'
+  state_code: '31'
+  name: Pankshin
+- code: '3114'
+  state_code: '31'
+  name: Qua An
+- code: '3115'
+  state_code: '31'
+  name: Riyom
+- code: '3116'
+  state_code: '31'
+  name: Shendam
+- code: '3117'
+  state_code: '31'
+  name: Wase
+- code: '3201'
+  state_code: '32'
+  name: Abua Odua
+- code: '3202'
+  state_code: '32'
+  name: Ahoada East
+- code: '3203'
+  state_code: '32'
+  name: Ahoada West
+- code: '3204'
+  state_code: '32'
+  name: Akuku Toro
+- code: '3205'
+  state_code: '32'
+  name: Andoni
+- code: '3206'
+  state_code: '32'
+  name: Asari Toro
+- code: '3207'
+  state_code: '32'
+  name: Bonny
+- code: '3208'
+  state_code: '32'
+  name: Degema
+- code: '3209'
+  state_code: '32'
+  name: Eleme
+- code: '3210'
+  state_code: '32'
+  name: Emuoha
+- code: '3211'
+  state_code: '32'
+  name: Etche
+- code: '3212'
+  state_code: '32'
+  name: Gokana
+- code: '3213'
+  state_code: '32'
+  name: Ikwerre
+- code: '3214'
+  state_code: '32'
+  name: Khana
+- code: '3215'
+  state_code: '32'
+  name: Obio Akpor
+- code: '3216'
+  state_code: '32'
+  name: Ogba Egbema Ndor
+- code: '3217'
+  state_code: '32'
+  name: Ogu Bolo
+- code: '3218'
+  state_code: '32'
+  name: Okirika
+- code: '3219'
+  state_code: '32'
+  name: Omumma
+- code: '3220'
+  state_code: '32'
+  name: Opobo Nkoro
+- code: '3221'
+  state_code: '32'
+  name: Oyigbo
+- code: '3222'
+  state_code: '32'
+  name: Port Harcourt
+- code: '3223'
+  state_code: '32'
+  name: Tai
+- code: '3301'
+  state_code: '33'
+  name: Binji
+- code: '3302'
+  state_code: '33'
+  name: Bodinga
+- code: '3303'
+  state_code: '33'
+  name: Dange Shuni
+- code: '3304'
+  state_code: '33'
+  name: Gada
+- code: '3305'
+  state_code: '33'
+  name: Goronyo
+- code: '3306'
+  state_code: '33'
+  name: Gudu
+- code: '3307'
+  state_code: '33'
+  name: Gwadabawa
+- code: '3308'
+  state_code: '33'
+  name: Ilela
+- code: '3309'
+  state_code: '33'
+  name: Isa
+- code: '3310'
+  state_code: '33'
+  name: Kebbe
+- code: '3311'
+  state_code: '33'
+  name: Kware
+- code: '3312'
+  state_code: '33'
+  name: Rabah
+- code: '3313'
+  state_code: '33'
+  name: Sabon Birni
+- code: '3314'
+  state_code: '33'
+  name: Shagari
+- code: '3315'
+  state_code: '33'
+  name: Silame
+- code: '3316'
+  state_code: '33'
+  name: Sokoto North
+- code: '3317'
+  state_code: '33'
+  name: Sokoto South
+- code: '3318'
+  state_code: '33'
+  name: Jambuwal
+- code: '3319'
+  state_code: '33'
+  name: Tangaza
+- code: '3320'
+  state_code: '33'
+  name: Tureta
+- code: '3321'
+  state_code: '33'
+  name: Wamakko
+- code: '3322'
+  state_code: '33'
+  name: Wurno
+- code: '3323'
+  state_code: '33'
+  name: Yabo
+- code: '3401'
+  state_code: '34'
+  name: Ardo Kola
+- code: '3402'
+  state_code: '34'
+  name: Bali
+- code: '3403'
+  state_code: '34'
+  name: Donga
+- code: '3404'
+  state_code: '34'
+  name: Gashaka
+- code: '3405'
+  state_code: '34'
+  name: Gassol
+- code: '3406'
+  state_code: '34'
+  name: Ibi
+- code: '3407'
+  state_code: '34'
+  name: Jalingo
+- code: '3408'
+  state_code: '34'
+  name: Karim Lam
+- code: '3409'
+  state_code: '34'
+  name: Kurmi
+- code: '3410'
+  state_code: '34'
+  name: Lau
+- code: '3411'
+  state_code: '34'
+  name: Saduana
+- code: '3412'
+  state_code: '34'
+  name: Takum
+- code: '3413'
+  state_code: '34'
+  name: Ussa
+- code: '3414'
+  state_code: '34'
+  name: Wukari
+- code: '3415'
+  state_code: '34'
+  name: Yorro
+- code: '3416'
+  state_code: '34'
+  name: Zing
+- code: '3501'
+  state_code: '35'
+  name: Barde
+- code: '3502'
+  state_code: '35'
+  name: Bursari
+- code: '3503'
+  state_code: '35'
+  name: Damaturu
+- code: '3504'
+  state_code: '35'
+  name: Fika
+- code: '3505'
+  state_code: '35'
+  name: Fune
+- code: '3506'
+  state_code: '35'
+  name: Geidam
+- code: '3507'
+  state_code: '35'
+  name: Gujba
+- code: '3508'
+  state_code: '35'
+  name: Gulani
+- code: '3509'
+  state_code: '35'
+  name: Jakusko
+- code: '3510'
+  state_code: '35'
+  name: Karasuwa
+- code: '3511'
+  state_code: '35'
+  name: Machina
+- code: '3512'
+  state_code: '35'
+  name: Nangere
+- code: '3513'
+  state_code: '35'
+  name: Nguru
+- code: '3514'
+  state_code: '35'
+  name: Potiskum
+- code: '3515'
+  state_code: '35'
+  name: Tarmuwa
+- code: '3516'
+  state_code: '35'
+  name: Yunusari
+- code: '3517'
+  state_code: '35'
+  name: Yusfari
+- code: '3601'
+  state_code: '36'
+  name: Anka
+- code: '3602'
+  state_code: '36'
+  name: Bakura
+- code: '3603'
+  state_code: '36'
+  name: Birnin Magaji
+- code: '3604'
+  state_code: '36'
+  name: Bukkuyum
+- code: '3605'
+  state_code: '36'
+  name: Bungudu
+- code: '3606'
+  state_code: '36'
+  name: Gummi
+- code: '3607'
+  state_code: '36'
+  name: Gusau
+- code: '3608'
+  state_code: '36'
+  name: Kaura Namoda
+- code: '3609'
+  state_code: '36'
+  name: Maraddun
+- code: '3610'
+  state_code: '36'
+  name: Maru
+- code: '3611'
+  state_code: '36'
+  name: Shinkafi
+- code: '3612'
+  state_code: '36'
+  name: Talata Mafara
+- code: '3613'
+  state_code: '36'
+  name: Tsafe
+- code: '3614'
+  state_code: '36'
+  name: Zurmi
+- code: '3701'
+  state_code: '37'
+  name: Abaji
+- code: '3702'
+  state_code: '37'
+  name: Bwari
+- code: '3703'
+  state_code: '37'
+  name: Gwagwalada
+- code: '3704'
+  state_code: '37'
+  name: Kuje
+- code: '3705'
+  state_code: '37'
+  name: Kwali
+- code: '3706'
+  state_code: '37'
+  name: Abuja Municipal

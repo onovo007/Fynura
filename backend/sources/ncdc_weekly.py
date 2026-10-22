@@ -1,17 +1,17 @@
-"""Parser for explicitly transcribed tables in official NCDC weekly reports.
-
-Live PDF discovery is intentionally outside this adapter. A report must first be
-retrieved through an approved route, checksummed, and transcribed with its page
-and table identifiers. This makes review possible and prevents a layout change
-from silently becoming epidemiological data.
-"""
+"""Allowlisted NCDC weekly-report discovery, retrieval and reviewed extraction."""
 
 from __future__ import annotations
 
 import csv
 import hashlib
+import re
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from io import StringIO
+from urllib.parse import urljoin, urlparse
+
+import httpx
+from bs4 import BeautifulSoup
 
 from backend.models.domain import Geography, Observation
 
@@ -27,10 +27,138 @@ REQUIRED_COLUMNS = {
     "table",
 }
 
+INDEX_URL = "https://www.ncdc.gov.ng/reports/weekly"
+ALLOWED_HOSTS = {"ncdc.gov.ng", "www.ncdc.gov.ng"}
+PDF_PATH = re.compile(r"^/themes/common/docs/wers/[A-Za-z0-9_.-]+\.pdf$")
+MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class NCDCReportCandidate:
+    source_url: str
+    title: str
+    issue: str | None
+    reporting_label: str | None
+    posted_at: datetime | None
+
+
+@dataclass(frozen=True)
+class RetrievedDocument:
+    candidate: NCDCReportCandidate
+    content: bytes
+    checksum: str
+    content_type: str
+    retrieved_at: datetime
+
 
 class NCDCWeeklyReportAdapter:
     source_id = "ncdc_weekly_reports"
     publisher = "Nigeria Centre for Disease Control and Prevention"
+    parser_version = "ncdc-weekly-v2"
+
+    @staticmethod
+    def _validate_url(url: str, *, pdf: bool = False) -> None:
+        parsed = urlparse(url)
+        if parsed.scheme != "https" or parsed.hostname not in ALLOWED_HOSTS:
+            raise ValueError("NCDC URL is outside the approved HTTPS host allowlist")
+        if pdf and not PDF_PATH.fullmatch(parsed.path):
+            raise ValueError("NCDC document path is outside the approved weekly-report route")
+
+    @staticmethod
+    def _parse_posted_at(text: str) -> datetime | None:
+        value = text.removeprefix("Posted:").strip()
+        try:
+            return datetime.strptime(value, "%d-%m-%Y %I:%M:%S %p").replace(tzinfo=UTC)
+        except ValueError:
+            return None
+
+    def parse_index(self, html: str) -> list[NCDCReportCandidate]:
+        soup = BeautifulSoup(html, "html.parser")
+        candidates: list[NCDCReportCandidate] = []
+        seen: set[str] = set()
+        for anchor in soup.select('a[href*="/themes/common/docs/wers/"]'):
+            url = urljoin(INDEX_URL, anchor.get("href", ""))
+            if url in seen:
+                continue
+            self._validate_url(url, pdf=True)
+            container = anchor.find_parent("div", class_="row") or anchor.parent
+            title_node = container.find("h3") if container else None
+            posted_node = container.find("h5") if container else None
+            issue_node = None
+            if container:
+                issue_node = next(
+                    (p for p in container.find_all("p") if p.get_text(" ", strip=True).startswith("Issue:")),
+                    None,
+                )
+            title = title_node.get_text(" ", strip=True) if title_node else "NCDC weekly report"
+            issue = issue_node.get_text(" ", strip=True).removeprefix("Issue:").strip() if issue_node else None
+            posted = self._parse_posted_at(posted_node.get_text(" ", strip=True)) if posted_node else None
+            reporting = title.split(":", 1)[1].strip() if ":" in title else None
+            candidates.append(NCDCReportCandidate(url, title, issue, reporting, posted))
+            seen.add(url)
+        if not candidates:
+            raise ValueError("NCDC weekly-report index contained no approved PDF links")
+        return candidates
+
+    async def discover(
+        self,
+        *,
+        timeout_seconds: float = 20.0,
+        client: httpx.AsyncClient | None = None,
+    ) -> list[NCDCReportCandidate]:
+        self._validate_url(INDEX_URL)
+        headers = {"User-Agent": "Fynura evidence retriever/1.0 (+source provenance)"}
+        if client is None:
+            async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=False, headers=headers) as owned:
+                response = await owned.get(INDEX_URL)
+        else:
+            response = await client.get(INDEX_URL, headers=headers)
+        response.raise_for_status()
+        return self.parse_index(response.text)
+
+    async def retrieve(
+        self,
+        candidate: NCDCReportCandidate,
+        *,
+        timeout_seconds: float = 30.0,
+        max_bytes: int = MAX_DOCUMENT_BYTES,
+        client: httpx.AsyncClient | None = None,
+    ) -> RetrievedDocument:
+        self._validate_url(candidate.source_url, pdf=True)
+        headers = {"User-Agent": "Fynura evidence retriever/1.0 (+source provenance)"}
+        if client is None:
+            async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=False, headers=headers) as owned:
+                response = await owned.get(candidate.source_url)
+        else:
+            response = await client.get(candidate.source_url, headers=headers)
+        response.raise_for_status()
+        return self.validate_document_response(candidate, response, max_bytes=max_bytes)
+
+    def validate_document_response(
+        self,
+        candidate: NCDCReportCandidate,
+        response: httpx.Response,
+        *,
+        max_bytes: int = MAX_DOCUMENT_BYTES,
+    ) -> RetrievedDocument:
+        """Validate a fetched response separately so safety rules are unit-testable."""
+        self._validate_url(candidate.source_url, pdf=True)
+        response.raise_for_status()
+        declared_length = response.headers.get("content-length")
+        if declared_length and int(declared_length) > max_bytes:
+            raise ValueError("NCDC report exceeds the configured document-size limit")
+        content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+        if content_type != "application/pdf" or not response.content.startswith(b"%PDF"):
+            raise ValueError("NCDC report response is not a valid PDF")
+        if len(response.content) > max_bytes:
+            raise ValueError("NCDC report exceeds the configured document-size limit")
+        return RetrievedDocument(
+            candidate=candidate,
+            content=response.content,
+            checksum=self.checksum(response.content),
+            content_type=content_type,
+            retrieved_at=datetime.now(UTC),
+        )
 
     @staticmethod
     def checksum(document_bytes: bytes) -> str:

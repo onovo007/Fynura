@@ -7,6 +7,7 @@ class MemoryRepository:
         self.watches: dict[str, Watch] = {}
         self.users: dict[str, dict] = {}
         self.events: list[dict] = []
+        self.source_documents: dict[str, dict] = {}
 
     def save_assessment(self, item: Assessment) -> Assessment:
         self.assessments[item.assessment_id] = item
@@ -22,3 +23,14 @@ class MemoryRepository:
     def save_watch(self, watch: Watch) -> Watch:
         self.watches[watch.watch_id] = watch
         return watch
+
+    def save_source_document(self, document):
+        payload = document.model_dump(mode="json")
+        self.source_documents[document.checksum] = payload
+        return document
+
+    def get_source_document(self, checksum: str):
+        return self.source_documents.get(checksum)
+
+    def has_source_document(self, checksum: str) -> bool:
+        return checksum in self.source_documents
