@@ -16,7 +16,7 @@
   const isAdvisory=m=>m?.indicator==='preparedness_advisory';
   const shownValue=m=>m.value==null?'Unresolved conflict':isAdvisory(m)?'Official advisory':fmt(m.value);
   const shownUnit=m=>isAdvisory(m)?'No confirmed Ebola case reported':m.unit;
-  const sourceName=id=>({who_ebola_don:'WHO Disease Outbreak News',who_measles_monthly:'WHO monthly surveillance',who_cholera_wer:'WHO Weekly Epidemiological Record',ncdc_ebola_advisory:'Nigeria Centre for Disease Control and Prevention'}[id]||id||'Not selected');
+  const sourceName=id=>({who_ebola_don:'WHO Disease Outbreak News',who_measles_monthly:'WHO monthly surveillance',who_cholera:'WHO Weekly Epidemiological Record',who_cholera_wer:'WHO Weekly Epidemiological Record',ncdc_ebola_advisory:'Nigeria Centre for Disease Control and Prevention'}[id]||id||'Not selected');
   const dates=m=>'<dl class="period-strip"><div><dt>Reporting period</dt><dd>'+esc(m.reporting_start?displayDate(m.reporting_start)+' – '+displayDate(m.reporting_cutoff):(m.threat==='measles'&&m.reporting_cutoff?new Date(m.reporting_cutoff+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}):'Through '+displayDate(m.reporting_cutoff)))+'</dd></div><div><dt>Reporting cutoff</dt><dd>'+esc(displayDate(m.reporting_cutoff))+'</dd></div><div><dt>Published</dt><dd>'+esc(displayDate(m.publication_date))+'</dd></div><div><dt>Retrieved</dt><dd>'+esc(m.retrieved_at?new Date(m.retrieved_at).toLocaleString():'Not stated')+'</dd></div></dl>';
   function controls(){
     if(document.querySelector('#workspace-filters'))return;
